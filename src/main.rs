@@ -22,10 +22,7 @@ fn main() {
 }
 
 fn execute(client: &Client, code: &str) -> Result<ExecuteResponse, Error> {
-    let code = format!(
-        "fn main() {{\n    println!(\"{{:?}}\", {{ {} }});\n}}\n",
-        code
-    );
+    let code = format!(include!("../template.rs"), code = code);
     let req = ExecuteRequest::new(code);
 
     playground::execute(client, &req)
