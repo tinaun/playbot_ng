@@ -5,7 +5,13 @@ pub fn run() -> Result<(), Error> {
     let config = Config {
         nickname: Some("eval".into()),
         nick_password: Some(option_env!("PASS").expect("PASS").into()),
-        channels: Some(vec!["#rust-offtopic".into()]),
+        channels: Some(vec![
+            "#rust".into(),
+            "#rust-beginners".into(),
+            "#rust-offtopic".into(),
+            "#rust-de".into(),
+            "#rust-fr".into(),
+        ]),
         use_ssl: Some(true),
         server: Some("irc.mozilla.org".into()),
         port: Some(6697),
