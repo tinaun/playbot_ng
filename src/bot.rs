@@ -48,28 +48,42 @@ pub fn run() -> Result<(), Error> {
 
             body[current_nickname.len()+1..].trim()
         };
+        let code = format!(include!("../template.rs"), code = code);
 
-        let resp = match ::execute(&http, code) {
+        let resp = match playground::execute(&http, &ExecuteRequest::new(code.as_str())) {
             Err(e) => return eprintln!("Failed to execute code: {:?}", e),
             Ok(resp) => resp,
         };
 
-        let output = if resp.success { resp.stdout } else { resp.stderr };
+        let output = if resp.success { &resp.stdout } else { &resp.stderr };
 
-        let send = |msg| if target.is_channel_name() {
+        let send = |msg: &str| if target.is_channel_name() {
             server.send_notice(&target, msg)
         } else {
             server.send_privmsg(&target, msg)
         };
 
-        for line in output.lines().take(2) {
+        let skip_count = if resp.success { 0 } else { 1 };
+
+        for line in output.lines().skip(skip_count).take(2) {
             if let Err(e) = send(line) {
                 eprintln!("Failed to send message: {:?}", e);
             }
         }
 
         if output.lines().count() > 2 {
-            if let Err(e) = send("~~~ output truncated ~~~") {
+            let code = format!(include!("../paste_template.rs"),
+                code = code,
+                stdout = resp.stdout,
+                stderr = resp.stderr,
+            );
+
+            let url = match paste(&http, code) {
+                Ok(url) => url,
+                Err(e) => return eprintln!("Failed to paste code: {:?}", e),
+            };
+
+            if let Err(e) = send(&format!("~~~ Output truncated; full output at {}.rs", url)) {
                 eprintln!("Failed to send message: {:?}", e);
             }
         }

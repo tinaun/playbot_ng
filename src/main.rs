@@ -6,6 +6,7 @@ extern crate reqwest;
 
 mod playground;
 mod bot;
+mod paste;
 
 use playground::{ExecuteRequest, ExecuteResponse};
 use failure::Error;
@@ -19,11 +20,4 @@ fn main() {
             eprintln!("Disconnected for an unknown reason");
         }
     }
-}
-
-fn execute(client: &Client, code: &str) -> Result<ExecuteResponse, Error> {
-    let code = format!(include!("../template.rs"), code = code);
-    let req = ExecuteRequest::new(code);
-
-    playground::execute(client, &req)
 }

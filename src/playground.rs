@@ -1,6 +1,7 @@
 use failure::Error;
 use reqwest::Client;
 use std::str;
+use std::borrow::Cow;
 
 pub fn execute(client: &Client, req: &ExecuteRequest) -> Result<ExecuteResponse, Error> {
     let resp = client
@@ -14,16 +15,16 @@ pub fn execute(client: &Client, req: &ExecuteRequest) -> Result<ExecuteResponse,
 
 #[derive(Serialize,Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ExecuteRequest {
-    code: String,
+pub struct ExecuteRequest<'a> {
+    code: Cow<'a, str>,
     channel: Channel,
     crate_type: CrateType,
     mode: Mode,
     tests: bool,
 }
 
-impl ExecuteRequest {
-    pub fn new<S: Into<String>>(code: S) -> Self {
+impl<'a> ExecuteRequest<'a> {
+    pub fn new<S: Into<Cow<'a, str>>>(code: S) -> Self {
         Self {
             code: code.into(),
             channel: Channel::Stable,
