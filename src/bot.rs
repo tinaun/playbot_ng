@@ -1,5 +1,7 @@
 use irc::client::prelude::{Config, IrcServer, Server, ServerExt, Command, ChannelExt};
 use failure::{Error, SyncFailure};
+use playground::{self, ExecuteRequest};
+use paste::paste;
 
 pub fn run() -> Result<(), Error> {
     let config = Config {
