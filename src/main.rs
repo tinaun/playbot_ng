@@ -8,10 +8,6 @@ mod playground;
 mod bot;
 mod paste;
 
-use playground::{ExecuteRequest, ExecuteResponse};
-use failure::Error;
-use reqwest::Client;
-
 fn main() {
     loop {   
         if let Ok(e) = bot::run() {
