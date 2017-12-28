@@ -27,13 +27,13 @@ pub fn run() -> Result<(), Error> {
     let server = IrcServer::from_config(config)
         .map_err(SyncFailure::new)?;
     let http = ::reqwest::Client::new();
-    
+
     server.identify()
         .map_err(SyncFailure::new)?;
 
     server.for_each_incoming(|message| {
         let body = match message.command {
-            Command::PRIVMSG(_, ref body) => body,
+            Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return,
         };
 
@@ -42,13 +42,13 @@ pub fn run() -> Result<(), Error> {
         let current_nickname = server.current_nickname();
 
         let code = if !target.is_channel_name() {
-            body.as_str().trim()
+            body
         } else {
-            if !body.starts_with(format!("{}:", current_nickname).as_str()) {
+            if !body.starts_with(&format!("{}:", current_nickname)) {
                 return;
             }
 
-            body[current_nickname.len()+1..].trim()
+            body[current_nickname.len()+1..].trim_left()
         };
 
         let (channel, code) = if code.starts_with("--nightly ") {
