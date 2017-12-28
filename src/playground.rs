@@ -33,6 +33,10 @@ impl<'a> ExecuteRequest<'a> {
             tests: false,
         }
     }
+
+    pub fn set_channel(&mut self, channel: Channel) {
+        self.channel = channel;
+    }
 }
 
 #[derive(Deserialize,Debug)]

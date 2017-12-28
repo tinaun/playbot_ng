@@ -1,6 +1,6 @@
 use irc::client::prelude::{Config, IrcServer, Server, ServerExt, Command, ChannelExt};
 use failure::{Error, SyncFailure};
-use playground::{self, ExecuteRequest};
+use playground::{self, ExecuteRequest, Channel};
 use paste::paste;
 
 pub fn run() -> Result<(), Error> {
@@ -42,7 +42,7 @@ pub fn run() -> Result<(), Error> {
         let current_nickname = server.current_nickname();
 
         let code = if !target.is_channel_name() {
-            body.as_str()
+            body.as_str().trim()
         } else {
             if !body.starts_with(format!("{}:", current_nickname).as_str()) {
                 return;
@@ -50,9 +50,21 @@ pub fn run() -> Result<(), Error> {
 
             body[current_nickname.len()+1..].trim()
         };
+
+        let (channel, code) = if code.starts_with("--nightly ") {
+            (Channel::Nightly, code[10..].trim_left())
+        } else if code.starts_with("--beta ") {
+            (Channel::Beta, code[7..].trim_left())
+        } else {
+            (Channel::Stable, code)
+        };
+
         let code = format!(include!("../template.rs"), code = code);
 
-        let resp = match playground::execute(&http, &ExecuteRequest::new(code.as_str())) {
+        let mut request = ExecuteRequest::new(code.as_ref());
+        request.set_channel(channel);
+
+        let resp = match playground::execute(&http, &request) {
             Err(e) => return eprintln!("Failed to execute code: {:?}", e),
             Ok(resp) => resp,
         };
