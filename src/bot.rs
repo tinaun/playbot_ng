@@ -4,27 +4,7 @@ use playground::{self, ExecuteRequest, Channel};
 use paste::paste;
 
 pub fn run() -> Result<(), Error> {
-    let config = Config {
-        nickname: Some("eval".into()),
-        nick_password: Some(option_env!("PASS").expect("PASS").into()),
-        channels: Some(vec![
-            "#rust".into(),
-            "#rust-beginners".into(),
-            "#rust-offtopic".into(),
-            "#rust-de".into(),
-            "#rust-fr".into(),
-        ]),
-        use_ssl: Some(true),
-        server: Some("irc.mozilla.org".into()),
-        port: Some(6697),
-        encoding: Some("UTF-8".into()),
-        should_ghost: Some(true),
-        ghost_sequence: Some(vec!["RECOVER".into()]),
-        burst_window_length: Some(3),
-        max_messages_in_burst: Some(4),
-        .. Config::default()
-    };
-    let server = IrcServer::from_config(config)
+    let server = IrcServer::new("config.toml")
         .map_err(SyncFailure::new)?;
     let http = ::reqwest::Client::new();
 
