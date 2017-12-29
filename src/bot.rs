@@ -60,7 +60,10 @@ impl<'a> Context<'a> {
         // Strip bot address
         {
             let current_nickname = server.current_nickname();
-            if target.is_channel_name() && body.starts_with(&format!("{}:", current_nickname)) {
+            if target.is_channel_name() {
+                if !body.starts_with(&format!("{}:", current_nickname)) {
+                    return None;
+                }
                 body = body[current_nickname.len()+1..].trim_left();
             }
         }
