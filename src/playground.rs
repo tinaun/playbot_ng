@@ -13,6 +13,15 @@ pub fn execute(client: &Client, req: &ExecuteRequest) -> Result<ExecuteResponse,
     Ok(resp)
 }
 
+pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
+    let resp = client
+        .get(&format!("https://play.rust-lang.org/meta/version/{}", channel.as_str()))
+        .send()?
+        .json()?;
+
+    Ok(resp)
+}
+
 #[derive(Serialize,Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecuteRequest<'a> {
@@ -59,7 +68,7 @@ pub enum CrateType {
     Bin,
 }
 
-#[derive(Serialize,Debug)]
+#[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Channel {
     Stable,
@@ -79,9 +88,9 @@ impl Channel {
 
 #[derive(Deserialize)]
 pub struct Version {
-    date: String,
-    hash: String,
-    version: String,
+    pub date: String,
+    pub hash: String,
+    pub version: String,
 }
 
 #[derive(Deserialize)]
