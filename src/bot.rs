@@ -84,7 +84,7 @@ impl<'a> Context<'a> {
                 "--stable" => channel = Channel::Stable,
                 "--beta" => channel = Channel::Beta,
                 "--nightly" => channel = Channel::Nightly,
-                "--version" => show_version = true,
+                "--version" | "VERSION" => show_version = true,
                 "--bare" | "--mini" => bare = true,
                 "--debug" => mode = Mode::Debug,
                 "--release" => mode = Mode::Release,
