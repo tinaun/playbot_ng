@@ -37,6 +37,7 @@ struct Context<'a> {
     body: &'a str,
     channel: Channel,
     show_version: bool,
+    bare: bool,
 }
 
 impl<'a> Context<'a> {
@@ -70,6 +71,7 @@ impl<'a> Context<'a> {
 
         let mut channel = Channel::Stable;
         let mut show_version = false;
+        let mut bare = false;
 
         // Parse flags
         loop {
@@ -81,6 +83,7 @@ impl<'a> Context<'a> {
                 "--beta" => channel = Channel::Beta,
                 "--nightly" => channel = Channel::Nightly,
                 "--version" => show_version = true,
+                "--bare" | "--mini" => bare = true,
                 _ => break,
             }
 
@@ -95,6 +98,7 @@ impl<'a> Context<'a> {
             send_fn,
             channel,
             body,
+            bare,
         })
     }
 
@@ -123,7 +127,9 @@ fn show_version(context: &Context) {
 }
 
 fn execute_code(context: &Context) {
-    let code = format!(include!("../template.rs"), code = context.body);
+    let code = if context.bare { context.body.to_string() } else {
+        format!(include!("../template.rs"), code = context.body)
+    };
 
     let mut request = ExecuteRequest::new(code.as_ref());
     request.set_channel(context.channel);
