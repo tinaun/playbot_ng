@@ -1,6 +1,6 @@
 use irc::client::prelude::{Config, IrcServer, Server, ServerExt, Command, ChannelExt, Message};
 use failure::{Error, SyncFailure};
-use playground::{self, ExecuteRequest, Channel};
+use playground::{self, ExecuteRequest, Channel, Mode};
 use paste::paste;
 use reqwest;
 use irc;
@@ -38,6 +38,7 @@ struct Context<'a> {
     channel: Channel,
     show_version: bool,
     bare: bool,
+    mode: Mode,
 }
 
 impl<'a> Context<'a> {
@@ -72,6 +73,7 @@ impl<'a> Context<'a> {
         let mut channel = Channel::Stable;
         let mut show_version = false;
         let mut bare = false;
+        let mut mode = Mode::Debug;
 
         // Parse flags
         loop {
@@ -84,6 +86,8 @@ impl<'a> Context<'a> {
                 "--nightly" => channel = Channel::Nightly,
                 "--version" => show_version = true,
                 "--bare" | "--mini" => bare = true,
+                "--debug" => mode = Mode::Debug,
+                "--release" => mode = Mode::Release,
                 _ => break,
             }
 
@@ -99,6 +103,7 @@ impl<'a> Context<'a> {
             channel,
             body,
             bare,
+            mode,
         })
     }
 
@@ -133,6 +138,7 @@ fn execute_code(context: &Context) {
 
     let mut request = ExecuteRequest::new(code.as_ref());
     request.set_channel(context.channel);
+    request.set_mode(context.mode);
 
     let resp = match playground::execute(&context.http, &request) {
         Err(e) => return eprintln!("Failed to execute code: {:?}", e),

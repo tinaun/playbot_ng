@@ -46,6 +46,10 @@ impl<'a> ExecuteRequest<'a> {
     pub fn set_channel(&mut self, channel: Channel) {
         self.channel = channel;
     }
+
+    pub fn set_mode(&mut self, mode: Mode) {
+        self.mode = mode;
+    }
 }
 
 #[derive(Deserialize,Debug)]
@@ -55,7 +59,7 @@ pub struct ExecuteResponse {
     pub success: bool,
 }
 
-#[derive(Serialize,Debug)]
+#[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
     Debug,
