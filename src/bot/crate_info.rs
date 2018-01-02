@@ -1,6 +1,6 @@
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
-use super::{Module, Flow};
+use super::{Module, Flow, Context};
 
 pub struct CrateInfo {
     prefix: String,
@@ -15,7 +15,9 @@ impl CrateInfo {
 }
 
 impl Module for CrateInfo {
-    fn run(&mut self, mut body: &str, reply: &Fn(&str)) -> Flow {
+    fn run(&mut self, ctx: Context) -> Flow {
+        let mut body = ctx.body();
+
         // Ensure the prefix exists
         if !body.starts_with(&self.prefix) {
             return Flow::Continue;
@@ -47,7 +49,7 @@ impl Module for CrateInfo {
             urlname = utf8_percent_encode(&krate.name(), PATH_SEGMENT_ENCODE_SET).collect::<String>()
         );
 
-        reply(&output);
+        ctx.reply(&output);
 
         Flow::Break
     }

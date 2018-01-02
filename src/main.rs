@@ -1,5 +1,3 @@
-#![feature(universal_impl_trait)]
-#![feature(conservative_impl_trait)]
 extern crate serde;
 extern crate failure;
 extern crate irc;
