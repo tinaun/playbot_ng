@@ -4,6 +4,8 @@ use playground::{self, ExecuteRequest, Channel, Mode};
 use paste::paste;
 use reqwest;
 use irc;
+use cratesio;
+use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 pub fn run() -> Result<(), Error> {
     let server = IrcServer::new("config.toml")
@@ -14,6 +16,17 @@ pub fn run() -> Result<(), Error> {
         .map_err(SyncFailure::new)?;
 
     server.for_each_incoming(|message| {
+        let mut body = match message.command {
+            Command::PRIVMSG(_, ref body) => body.trim(),
+            _ => return,
+        };
+
+        let reply = create_reply_fn(&server, &message);
+
+        if crate_info(body, reply).is_err() {
+            return;
+        }
+
         let context = match Context::new(&http, &server, &message) {
             Some(context) => context,
             None => return,
@@ -47,6 +60,7 @@ impl<'a> Context<'a> {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
         };
+
         let target = match message.response_target() {
             Some(target) => target,
             None => {
@@ -128,6 +142,40 @@ fn show_version(context: &Context) {
 
     if let Err(e) = context.reply(&version) {
         eprintln!("Failed to send message: {:?}", e);
+    }
+}
+
+fn crate_info(mut body: &str, reply: impl Fn(&str)) -> Result<(), ()> {
+    if !body.starts_with("?crate") {
+        return Ok(());
+    }
+    body = body[6..].trim_left();
+
+    let crate_name = match body.split_whitespace().next() {
+        Some(crate_name) => crate_name,
+        None => return Err(()),
+    };
+
+    let info = cratesio::crate_info(crate_name).map_err(|_| ())?;
+    let krate = info.krate();
+    let output = format!(
+        "{name} ({version}) - {description} -> https://crates.io/crates/{urlname} [https://docs.rs/crate/{urlname}]",
+        name = krate.name(),
+        version = krate.max_version(),
+        description = krate.description(),
+        urlname = utf8_percent_encode(&krate.name(), PATH_SEGMENT_ENCODE_SET).collect::<String>()
+    );
+
+    reply(&output);
+
+    Err(())
+}
+
+fn create_reply_fn<'a>(server: &'a IrcServer, message: &'a Message) -> impl Fn(&str) + 'a {
+    move |msg| match message.response_target() {
+        Some(target) if target.is_channel_name() => { server.send_notice(target, msg); },
+        Some(target) => { server.send_privmsg(target, msg); },
+        None => {},
     }
 }
 
