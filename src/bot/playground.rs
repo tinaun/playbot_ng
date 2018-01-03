@@ -107,5 +107,5 @@ fn print_version(http: &Client, channel: Channel, ctx: &Context) {
         date = resp.date,
     );
 
-    ctx.reply(&version);
+    ctx.reply(version);
 }

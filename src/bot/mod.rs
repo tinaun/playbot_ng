@@ -105,7 +105,7 @@ impl<'a> Context<'a> {
         self.directly_addressed
     }
 
-    pub fn reply(&self, message: &str) {
-        (self.send_fn)(self.server, self.target, message);
+    pub fn reply<S: AsRef<str>>(&self, message: S) {
+        (self.send_fn)(self.server, self.target, message.as_ref());
     }
 }

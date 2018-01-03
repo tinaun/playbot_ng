@@ -49,7 +49,7 @@ impl Module for CrateInfo {
             urlname = utf8_percent_encode(&krate.name(), PATH_SEGMENT_ENCODE_SET).collect::<String>()
         );
 
-        ctx.reply(&output);
+        ctx.reply(output);
 
         Flow::Break
     }
