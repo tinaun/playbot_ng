@@ -5,9 +5,11 @@ use irc;
 
 mod crate_info;
 mod playground;
+mod codedb;
 
 use self::playground::Playground;
 use self::crate_info::CrateInfo;
+use self::codedb::CodeDB;
 
 pub trait Module {
     fn run(&mut self, ctx: Context) -> Flow;
@@ -23,6 +25,8 @@ pub enum Flow {
 }
 
 pub fn run() -> Result<(), Error> {
+    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
+
     let server = IrcServer::new("config.toml")
         .map_err(SyncFailure::new)?;
     let http = reqwest::Client::new();
@@ -32,6 +36,7 @@ pub fn run() -> Result<(), Error> {
 
     let mut modules = vec![
         CrateInfo::new("?crate").boxed(),
+        CodeDB::new(&mut codedb, &http).boxed(),
         Playground::new(&http).boxed(),
     ];
 
@@ -54,6 +59,7 @@ pub struct Context<'a> {
     body: &'a str,
     directly_addressed: bool,
     send_fn: fn(&IrcServer, &str, &str) -> irc::error::Result<()>,
+    source: &'a str,
     target: &'a str,
     server: &'a IrcServer,
 }
@@ -64,6 +70,8 @@ impl<'a> Context<'a> {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
         };
+
+        let source = message.prefix.as_ref().map(<_>::as_ref).unwrap_or("<unknown>");
 
         let target = match message.response_target() {
             Some(target) => target,
@@ -92,6 +100,7 @@ impl<'a> Context<'a> {
             server,
             body,
             send_fn,
+            source,
             target,
             directly_addressed,
         })
@@ -107,5 +116,9 @@ impl<'a> Context<'a> {
 
     pub fn reply<S: AsRef<str>>(&self, message: S) {
         (self.send_fn)(self.server, self.target, message.as_ref());
+    }
+
+    pub fn source(&self) -> &str {
+        self.source
     }
 }

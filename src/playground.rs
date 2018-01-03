@@ -43,6 +43,10 @@ impl<'a> ExecuteRequest<'a> {
         }
     }
 
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
     pub fn set_channel(&mut self, channel: Channel) {
         self.channel = channel;
     }

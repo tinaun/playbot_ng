@@ -57,39 +57,7 @@ impl<'a> Module for Playground<'a> {
         request.set_channel(channel);
         request.set_mode(mode);
 
-        let resp = match playground::execute(&self.http, &request) {
-            Ok(resp) => resp,
-            Err(e) => return {
-                eprintln!("Failed to execute code: {:?}", e);
-                Flow::Break
-            },
-        };
-
-        let output = if resp.success { &resp.stdout } else { &resp.stderr };
-
-        let skip_count = if resp.success { 0 } else { 1 };
-
-        for line in output.lines().skip(skip_count).take(2) {
-            ctx.reply(line);
-        }
-
-        if output.lines().count() > 2 {
-            let code = format!(include!("../../paste_template.rs"),
-                code = code,
-                stdout = resp.stdout,
-                stderr = resp.stderr,
-            );
-
-            let url = match paste(self.http, code) {
-                Ok(url) => url,
-                Err(e) => return {
-                    eprintln!("Failed to paste code: {:?}", e);
-                    Flow::Break
-                },
-            };
-
-            ctx.reply(&format!("~~~ Output truncated; full output at {}.rs", url));
-        }
+        execute(&ctx, self.http, &request);
 
         Flow::Break
     }
@@ -108,4 +76,38 @@ fn print_version(http: &Client, channel: Channel, ctx: &Context) {
     );
 
     ctx.reply(version);
+}
+
+pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
+    let resp = match playground::execute(http, &request) {
+        Ok(resp) => resp,
+        Err(e) => return {
+            eprintln!("Failed to execute code: {:?}", e);
+        },
+    };
+
+    let output = if resp.success { &resp.stdout } else { &resp.stderr };
+
+    let skip_count = if resp.success { 0 } else { 1 };
+
+    for line in output.lines().skip(skip_count).take(2) {
+        ctx.reply(line);
+    }
+
+    if output.lines().count() > 2 {
+        let code = format!(include!("../../paste_template.rs"),
+            code = request.code(),
+            stdout = resp.stdout,
+            stderr = resp.stderr,
+        );
+
+        let url = match paste(http, code) {
+            Ok(url) => url,
+            Err(e) => return {
+                eprintln!("Failed to paste code: {:?}", e);
+            },
+        };
+
+        ctx.reply(format!("~~~ Output truncated; full output at {}.rs", url));
+    }
 }
