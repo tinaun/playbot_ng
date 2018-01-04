@@ -99,7 +99,7 @@ impl<'a> CodeDB<'a> {
                     _
                 ),
                 ..
-            }) if segments.len() > 1 => {
+            }) if segments.len() >= 1 => {
                 segments[0].ident.to_string()
             },
             _ => {
