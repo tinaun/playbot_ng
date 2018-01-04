@@ -49,16 +49,26 @@ impl<'a> CodeDB<'a> {
 
         body = body.trim();
 
-        let name = match syn::parse_item(body) {
-            Ok(Item { ident, node: Fn(..), .. }) => {
-                ident.to_string()
+        let fun_item = match syn::parse_items(body) {
+            Ok(ref mut items) if items.len() >= 1 => {
+                items.swap_remove(0)
             },
             Ok(_) => {
-                ctx.reply("Only fns are allowed");
+                ctx.reply("Expected at least one fn item");
                 return;
             },
             Err(e) => {
                 ctx.reply(e.to_string());
+                return;
+            }
+        };
+
+        let name = match fun_item {
+            Item { ident, node: Fn(..), .. } => {
+                ident.to_string()
+            },
+            _ => {
+                ctx.reply("Only fns are allowed");
                 return;
             },
         };
