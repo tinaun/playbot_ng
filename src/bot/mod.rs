@@ -83,9 +83,16 @@ impl<'a> Context<'a> {
 
         let directly_addressed = {
             let current_nickname = server.current_nickname();
-            if body.starts_with(&format!("{}:", current_nickname)) {
-                body = body[current_nickname.len()+1..].trim_left();
-                true
+
+            if body.starts_with(current_nickname) {
+                let new_body = body[current_nickname.len()..].trim_left();
+
+                if new_body.starts_with(":") || new_body.starts_with(",") {
+                    body = new_body[1..].trim_left();
+                    true
+                } else {
+                    false
+                }
             } else {
                 !target.is_channel_name()
             }
