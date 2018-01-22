@@ -101,13 +101,13 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
             stderr = resp.stderr,
         );
 
-        let url = match paste(http, code) {
+        let url = match paste(http, code, request.channel(), request.mode()) {
             Ok(url) => url,
             Err(e) => return {
                 eprintln!("Failed to paste code: {:?}", e);
             },
         };
 
-        ctx.reply(format!("~~~ Output truncated; full output at {}.rs", url));
+        ctx.reply(format!("~~~ Output truncated; full output at {}", url));
     }
 }

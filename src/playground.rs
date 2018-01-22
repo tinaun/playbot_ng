@@ -47,8 +47,16 @@ impl<'a> ExecuteRequest<'a> {
         &self.code
     }
 
+    pub fn channel(&self) -> Channel {
+        self.channel
+    }
+
     pub fn set_channel(&mut self, channel: Channel) {
         self.channel = channel;
+    }
+
+    pub fn mode(&self) -> Mode {
+        self.mode
     }
 
     pub fn set_mode(&mut self, mode: Mode) {
@@ -68,6 +76,15 @@ pub struct ExecuteResponse {
 pub enum Mode {
     Debug,
     Release,
+}
+
+impl Mode {
+    pub fn as_str(&self) -> &'static str {
+        match *self {
+            Mode::Debug => "debug",
+            Mode::Release => "release",
+        }
+    }
 }
 
 #[derive(Serialize,Debug)]
