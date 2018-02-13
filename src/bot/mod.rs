@@ -25,7 +25,7 @@ pub enum Flow {
 }
 
 pub fn run() -> Result<(), Error> {
-    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
+//    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
 
     let server = IrcServer::new("config.toml")
         .map_err(SyncFailure::new)?;
@@ -36,7 +36,7 @@ pub fn run() -> Result<(), Error> {
 
     let mut modules = vec![
         CrateInfo::new("?crate").boxed(),
-        CodeDB::new(&mut codedb, &http).boxed(),
+//        CodeDB::new(&mut codedb, &http).boxed(),
         Playground::new(&http).boxed(),
     ];
 
