@@ -1,6 +1,7 @@
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use super::{Module, Flow, Context};
+use itertools::Itertools;
 
 pub struct CrateInfo {
     prefix: String,
@@ -45,7 +46,7 @@ impl Module for CrateInfo {
             "{name} ({version}) - {description} -> https://crates.io/crates/{urlname} [https://docs.rs/crate/{urlname}]",
             name = krate.name(),
             version = krate.max_version(),
-            description = krate.description(),
+            description = krate.description().split_whitespace().join(" "),
             urlname = utf8_percent_encode(&krate.name(), PATH_SEGMENT_ENCODE_SET).collect::<String>()
         );
 

@@ -9,6 +9,7 @@ extern crate url;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json as json;
 extern crate chrono;
+extern crate itertools;
 
 use chrono::prelude::*;
 
