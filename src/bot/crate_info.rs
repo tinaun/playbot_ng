@@ -2,6 +2,8 @@ use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use super::{Module, Flow, Context};
 use itertools::Itertools;
+use reqwest;
+use reqwest::StatusCode::NotFound;
 
 pub struct CrateInfo {
     prefix: String,
@@ -38,7 +40,24 @@ impl Module for CrateInfo {
 
         let info = match cratesio::crate_info(crate_name) {
             Ok(info) => info,
-            Err(_) => return Flow::Break,
+            // TODO: Use proper error types
+            Err(err) => match err.downcast::<reqwest::Error>() {
+                Ok(ref err) if err.status() == Some(NotFound) => {
+                    ctx.reply(format!("Crate '{}' does not exist.", crate_name));
+                    return Flow::Break
+                },
+                Ok(err) => {
+                    eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
+                    ctx.reply(format!("Failed to get crate info for {}", crate_name));
+                    return Flow::Break
+                },
+                Err(err) => {
+                    eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
+                    ctx.reply(format!("Failed to get crate info for {}", crate_name));
+                    println!("?crate {}: other error: {:?}", crate_name, err);
+                    return Flow::Break
+                }
+            },
         };
 
         let krate = info.krate();
