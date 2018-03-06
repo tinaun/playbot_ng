@@ -71,6 +71,7 @@ pub struct Context<'a> {
     is_ctcp: bool,
     send_fn: fn(&IrcServer, &str, &str) -> irc::error::Result<()>,
     source: &'a str,
+    source_nickname: &'a str,
     target: &'a str,
     server: &'a IrcServer,
 }
@@ -81,6 +82,8 @@ impl<'a> Context<'a> {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
         };
+
+        let source_nickname = message.source_nickname()?;
 
         let is_ctcp = body.len() >= 2 && &body[..1] == "\x01" && &body[body.len() - 1..] == "\x01";
 
@@ -129,6 +132,7 @@ impl<'a> Context<'a> {
             body,
             send_fn,
             source,
+            source_nickname,
             target,
             is_directly_addressed,
             is_ctcp,
@@ -156,5 +160,9 @@ impl<'a> Context<'a> {
 
     pub fn source(&self) -> &str {
         self.source
+    }
+
+    pub fn source_nickname(&self) -> &str {
+        self.source_nickname
     }
 }
