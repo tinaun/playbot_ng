@@ -91,11 +91,7 @@ impl<'a> Context<'a> {
             body = &body[1..body.len() - 1];
         }
 
-        let source = message
-            .prefix
-            .as_ref()
-            .map(<_>::as_ref)
-            .unwrap_or("<unknown>");
+        let source = message.prefix.as_ref().map(<_>::as_ref)?;
 
         let target = match message.response_target() {
             Some(target) => target,
