@@ -15,7 +15,7 @@ impl<'a> Playground<'a> {
 
 impl<'a> Module for Playground<'a> {
     fn run(&mut self, ctx: Context) -> Flow {
-        if !ctx.directly_addressed() {
+        if !ctx.is_directly_addressed() {
             return Flow::Continue;
         }
 

@@ -67,7 +67,7 @@ pub fn run() -> Result<(), Error> {
 #[derive(Clone)]
 pub struct Context<'a> {
     body: &'a str,
-    directly_addressed: bool,
+    is_directly_addressed: bool,
     is_ctcp: bool,
     send_fn: fn(&IrcServer, &str, &str) -> irc::error::Result<()>,
     source: &'a str,
@@ -102,7 +102,7 @@ impl<'a> Context<'a> {
             }
         };
 
-        let directly_addressed = {
+        let is_directly_addressed = {
             let current_nickname = server.current_nickname();
 
             if body.starts_with(current_nickname) {
@@ -130,7 +130,7 @@ impl<'a> Context<'a> {
             send_fn,
             source,
             target,
-            directly_addressed,
+            is_directly_addressed,
             is_ctcp,
         })
     }
@@ -139,8 +139,11 @@ impl<'a> Context<'a> {
         self.body
     }
 
-    pub fn directly_addressed(&self) -> bool {
-        self.directly_addressed
+    /// Wether the message was aimed directetly at the bot,
+    /// either via private message or by prefixing a channel message with
+    /// the bot's name, followed by ',' or ':'.
+    pub fn is_directly_addressed(&self) -> bool {
+        self.is_directly_addressed
     }
 
     pub fn is_ctcp(&self) -> bool {
