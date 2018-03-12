@@ -85,7 +85,8 @@ impl<'a> Context<'a> {
 
         let source_nickname = message.source_nickname()?;
 
-        let is_ctcp = body.len() >= 2 && &body[..1] == "\x01" && &body[body.len() - 1..] == "\x01";
+        let is_ctcp = body.len() >= 2 && body.chars().next() == Some('\x01')
+            && body.chars().last() == Some('\x01');
 
         if is_ctcp {
             body = &body[1..body.len() - 1];
