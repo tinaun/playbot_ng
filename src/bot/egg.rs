@@ -64,23 +64,6 @@ impl Module for Egg {
             }
         }
 
-        // if let Some(name) = self.re1.captures(ctx.body).and_then(|c| c.get(1)) {
-        //     if name.as_str() == ctx.current_nickname() {
-        //         ctx.reply(&format!(
-        //             "I'm sorry {}, I'm afraid I can't do that.",
-        //             ctx.source_nickname()
-        //         ));
-        //         return Flow::Break;
-        //     }
-        // }
-
-        // if self.re2.is_match(ctx.body) {
-        //     ctx.reply(&format!(
-        //         "I think you know what the problem is just as well as I do."
-        //     ));
-        //     return Flow::Break;
-        // }
-
         Flow::Continue
     }
 }
