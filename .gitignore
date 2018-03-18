@@ -1,4 +1,5 @@
 config.toml
+code_db.json
 
 /target/
 **/*.rs.bk
