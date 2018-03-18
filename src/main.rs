@@ -10,6 +10,7 @@ extern crate url;
 extern crate serde_json as json;
 extern crate chrono;
 extern crate itertools;
+extern crate regex;
 
 use chrono::prelude::*;
 

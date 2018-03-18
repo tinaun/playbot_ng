@@ -6,10 +6,12 @@ use irc;
 mod crate_info;
 mod playground;
 mod codedb;
+mod egg;
 
 use self::playground::Playground;
 use self::crate_info::CrateInfo;
 use self::codedb::CodeDB;
+use self::egg::Egg;
 
 pub trait Module {
     fn run(&mut self, ctx: Context) -> Flow;
@@ -38,6 +40,7 @@ pub fn run() -> Result<(), Error> {
     let mut modules = vec![
         CrateInfo::new("?crate").boxed(),
         //        CodeDB::new(&mut codedb, &http).boxed(),
+        Egg::new().boxed(),
         Playground::new(&http).boxed(),
     ];
 
@@ -74,6 +77,7 @@ pub struct Context<'a> {
     source_nickname: &'a str,
     target: &'a str,
     server: &'a IrcServer,
+    current_nickname: &'a str,
 }
 
 impl<'a> Context<'a> {
@@ -124,6 +128,8 @@ impl<'a> Context<'a> {
             false => IrcServer::send_privmsg,
         };
 
+        let current_nickname = server.current_nickname();
+
         Some(Self {
             server,
             body,
@@ -133,6 +139,7 @@ impl<'a> Context<'a> {
             target,
             is_directly_addressed,
             is_ctcp,
+            current_nickname
         })
     }
 
@@ -161,5 +168,9 @@ impl<'a> Context<'a> {
 
     pub fn source_nickname(&self) -> &str {
         self.source_nickname
+    }
+
+    pub fn current_nickname(&self) -> &str {
+        self.current_nickname
     }
 }
