@@ -8,9 +8,9 @@ pub struct Egg {
 }
 
 fn re(re: &str) -> Regex {
-    let re = once("(?i)")
+    let re = once("(?i)^")
         .chain(re.split_whitespace())
-        .chain(once(""))
+        .chain(once("$"))
         .join(r"\s*");
     Regex::new(&re).unwrap()
 }
