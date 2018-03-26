@@ -1,5 +1,6 @@
-use irc::client::prelude::{ChannelExt, Command, IrcClient, Message, Client, ClientExt};
-use failure::{Error, SyncFailure};
+use std::sync::{Arc, Mutex};
+use irc::client::prelude::{Config, ChannelExt, Command, IrcReactor, IrcClient, Message, ClientExt};
+use failure::Error;
 use reqwest;
 use irc;
 
@@ -32,36 +33,45 @@ pub enum Flow {
 pub fn run() -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
 
-    let client = IrcClient::new("config.toml")?;
+    let mut reactor = IrcReactor::new()?;
+    let config = Config::load("config.toml")?;
+    let client = reactor.prepare_client_and_connect(&config)?;
     let http = reqwest::Client::new();
 
     client.identify()?;
 
-    let mut modules = vec![
+    let modules = Arc::new(Mutex::new(vec![
         CrateInfo::new("?crate").boxed(),
         //        CodeDB::new(&mut codedb, &http).boxed(),
         Egg::new().boxed(),
-        Playground::new(&http).boxed(),
-    ];
+        Playground::new(http).boxed(),
+    ]));
 
-    client
-        .for_each_incoming(|message| {
+    reactor
+        .register_client_with_handler(client, move |client, message| {
             let context = match Context::new(&client, &message) {
                 Some(context) => context,
-                None => return,
+                None => return Ok(()),
             };
 
             if context.is_ctcp() {
-                return;
+                return Ok(());
             }
 
             if modules
+                .lock()
+                .expect("lock poisoned")
                 .iter_mut()
                 .any(|module| module.run(context.clone()) == Flow::Break)
             {
-                return;
+                return Ok(());
             }
-        })?;
+            
+            Ok(())
+        });
+
+    // reactor blocks until a disconnection or other in `irc` error
+    reactor.run()?;
 
     Ok(())
 }
