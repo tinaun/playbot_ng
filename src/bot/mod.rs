@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
 use irc::client::prelude::{Config, ChannelExt, Command, IrcReactor, IrcClient, Message, ClientExt};
 use failure::Error;
 use reqwest;
@@ -40,7 +41,7 @@ pub fn run() -> Result<(), Error> {
 
     client.identify()?;
 
-    let modules = Arc::new(Mutex::new(vec![
+    let modules = Rc::new(RefCell::new(vec![
         CrateInfo::new("?crate").boxed(),
         //        CodeDB::new(&mut codedb, &http).boxed(),
         Egg::new().boxed(),
@@ -59,8 +60,7 @@ pub fn run() -> Result<(), Error> {
             }
 
             if modules
-                .lock()
-                .expect("lock poisoned")
+                .borrow_mut()
                 .iter_mut()
                 .any(|module| module.run(context.clone()) == Flow::Break)
             {
