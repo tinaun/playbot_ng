@@ -3,17 +3,17 @@ use paste::paste;
 use reqwest::Client;
 use super::{Module, Flow, Context};
 
-pub struct Playground<'a> {
-    http: &'a Client,
+pub struct Playground {
+    http: Client,
 }
 
-impl<'a> Playground<'a> {
-    pub fn new(http: &'a Client) -> Self {
+impl Playground {
+    pub fn new(http: Client) -> Self {
         Self { http }
     }
 }
 
-impl<'a> Module for Playground<'a> {
+impl Module for Playground {
     fn run(&mut self, ctx: Context) -> Flow {
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
@@ -45,7 +45,7 @@ impl<'a> Module for Playground<'a> {
         }
 
         if show_version {
-            print_version(self.http, channel, &ctx);
+            print_version(&self.http, channel, &ctx);
             return Flow::Break;
         }
 
@@ -57,7 +57,7 @@ impl<'a> Module for Playground<'a> {
         request.set_channel(channel);
         request.set_mode(mode);
 
-        execute(&ctx, self.http, &request);
+        execute(&ctx, &self.http, &request);
 
         Flow::Break
     }

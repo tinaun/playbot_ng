@@ -1,5 +1,6 @@
-use irc::client::prelude::{ChannelExt, Command, IrcServer, Message, Server, ServerExt};
-use failure::{Error, SyncFailure};
+use std::sync::{Arc, Mutex};
+use irc::client::prelude::{Config, ChannelExt, Command, IrcReactor, IrcClient, Message, ClientExt};
+use failure::Error;
 use reqwest;
 use irc;
 
@@ -32,37 +33,45 @@ pub enum Flow {
 pub fn run() -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
 
-    let server = IrcServer::new("config.toml").map_err(SyncFailure::new)?;
+    let mut reactor = IrcReactor::new()?;
+    let config = Config::load("config.toml")?;
+    let client = reactor.prepare_client_and_connect(&config)?;
     let http = reqwest::Client::new();
 
-    server.identify().map_err(SyncFailure::new)?;
+    client.identify()?;
 
-    let mut modules = vec![
+    let modules = Arc::new(Mutex::new(vec![
         CrateInfo::new("?crate").boxed(),
         //        CodeDB::new(&mut codedb, &http).boxed(),
         Egg::new().boxed(),
-        Playground::new(&http).boxed(),
-    ];
+        Playground::new(http).boxed(),
+    ]));
 
-    server
-        .for_each_incoming(|message| {
-            let context = match Context::new(&server, &message) {
+    reactor
+        .register_client_with_handler(client, move |client, message| {
+            let context = match Context::new(&client, &message) {
                 Some(context) => context,
-                None => return,
+                None => return Ok(()),
             };
 
             if context.is_ctcp() {
-                return;
+                return Ok(());
             }
 
             if modules
+                .lock()
+                .expect("lock poisoned")
                 .iter_mut()
                 .any(|module| module.run(context.clone()) == Flow::Break)
             {
-                return;
+                return Ok(());
             }
-        })
-        .map_err(SyncFailure::new)?;
+            
+            Ok(())
+        });
+
+    // reactor blocks until a disconnection or other in `irc` error
+    reactor.run()?;
 
     Ok(())
 }
@@ -72,16 +81,16 @@ pub struct Context<'a> {
     body: &'a str,
     is_directly_addressed: bool,
     is_ctcp: bool,
-    send_fn: fn(&IrcServer, &str, &str) -> irc::error::Result<()>,
+    send_fn: fn(&IrcClient, &str, &str) -> irc::error::Result<()>,
     source: &'a str,
     source_nickname: &'a str,
     target: &'a str,
-    server: &'a IrcServer,
+    client: &'a IrcClient,
     current_nickname: &'a str,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(server: &'a IrcServer, message: &'a Message) -> Option<Self> {
+    pub fn new(client: &'a IrcClient, message: &'a Message) -> Option<Self> {
         let mut body = match message.command {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
@@ -107,7 +116,7 @@ impl<'a> Context<'a> {
         };
 
         let is_directly_addressed = {
-            let current_nickname = server.current_nickname();
+            let current_nickname = client.current_nickname();
 
             if body.starts_with(current_nickname) {
                 let new_body = body[current_nickname.len()..].trim_left();
@@ -124,14 +133,14 @@ impl<'a> Context<'a> {
         };
 
         let send_fn = match target.is_channel_name() {
-            true => IrcServer::send_notice,
-            false => IrcServer::send_privmsg,
+            true => IrcClient::send_notice,
+            false => IrcClient::send_privmsg,
         };
 
-        let current_nickname = server.current_nickname();
+        let current_nickname = client.current_nickname();
 
         Some(Self {
-            server,
+            client,
             body,
             send_fn,
             source,
@@ -159,7 +168,7 @@ impl<'a> Context<'a> {
     }
 
     pub fn reply<S: AsRef<str>>(&self, message: S) {
-        (self.send_fn)(self.server, self.target, message.as_ref());
+        (self.send_fn)(self.client, self.target, message.as_ref());
     }
 
     pub fn source(&self) -> &str {
