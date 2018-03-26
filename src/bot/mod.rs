@@ -1,4 +1,4 @@
-use irc::client::prelude::{ChannelExt, Command, IrcServer, Message, Server, ServerExt};
+use irc::client::prelude::{ChannelExt, Command, IrcClient, Message, Client, ClientExt};
 use failure::{Error, SyncFailure};
 use reqwest;
 use irc;
@@ -32,10 +32,10 @@ pub enum Flow {
 pub fn run() -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
 
-    let server = IrcServer::new("config.toml").map_err(SyncFailure::new)?;
+    let client = IrcClient::new("config.toml")?;
     let http = reqwest::Client::new();
 
-    server.identify().map_err(SyncFailure::new)?;
+    client.identify()?;
 
     let mut modules = vec![
         CrateInfo::new("?crate").boxed(),
@@ -44,9 +44,9 @@ pub fn run() -> Result<(), Error> {
         Playground::new(&http).boxed(),
     ];
 
-    server
+    client
         .for_each_incoming(|message| {
-            let context = match Context::new(&server, &message) {
+            let context = match Context::new(&client, &message) {
                 Some(context) => context,
                 None => return,
             };
@@ -61,8 +61,7 @@ pub fn run() -> Result<(), Error> {
             {
                 return;
             }
-        })
-        .map_err(SyncFailure::new)?;
+        })?;
 
     Ok(())
 }
@@ -72,16 +71,16 @@ pub struct Context<'a> {
     body: &'a str,
     is_directly_addressed: bool,
     is_ctcp: bool,
-    send_fn: fn(&IrcServer, &str, &str) -> irc::error::Result<()>,
+    send_fn: fn(&IrcClient, &str, &str) -> irc::error::Result<()>,
     source: &'a str,
     source_nickname: &'a str,
     target: &'a str,
-    server: &'a IrcServer,
+    client: &'a IrcClient,
     current_nickname: &'a str,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(server: &'a IrcServer, message: &'a Message) -> Option<Self> {
+    pub fn new(client: &'a IrcClient, message: &'a Message) -> Option<Self> {
         let mut body = match message.command {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
@@ -107,7 +106,7 @@ impl<'a> Context<'a> {
         };
 
         let is_directly_addressed = {
-            let current_nickname = server.current_nickname();
+            let current_nickname = client.current_nickname();
 
             if body.starts_with(current_nickname) {
                 let new_body = body[current_nickname.len()..].trim_left();
@@ -124,14 +123,14 @@ impl<'a> Context<'a> {
         };
 
         let send_fn = match target.is_channel_name() {
-            true => IrcServer::send_notice,
-            false => IrcServer::send_privmsg,
+            true => IrcClient::send_notice,
+            false => IrcClient::send_privmsg,
         };
 
-        let current_nickname = server.current_nickname();
+        let current_nickname = client.current_nickname();
 
         Some(Self {
-            server,
+            client,
             body,
             send_fn,
             source,
@@ -159,7 +158,7 @@ impl<'a> Context<'a> {
     }
 
     pub fn reply<S: AsRef<str>>(&self, message: S) {
-        (self.send_fn)(self.server, self.target, message.as_ref());
+        (self.send_fn)(self.client, self.target, message.as_ref());
     }
 
     pub fn source(&self) -> &str {

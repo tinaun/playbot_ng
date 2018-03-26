@@ -7,7 +7,7 @@ authors = ["panicbit <panicbit.dev@gmail.com>"]
 serde = "1.0.25"
 serde_derive = "1.0.25"
 failure = "0.1.1"
-irc = "0.12.6"
+irc = "0.13.4"
 reqwest = "0.8.2"
 url = "1.6.0"
 syn = { version = "0.11.11", features = ["full", "parsing", "printing"] }
