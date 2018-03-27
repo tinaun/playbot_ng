@@ -51,7 +51,7 @@ impl Egg {
 impl Module for Egg {
     fn run(&mut self, ctx: Context) -> Flow {
         for dialog in &self.script {
-            if let Some(caps) = dialog.0.captures(ctx.body) {
+            if let Some(caps) = dialog.0.captures(ctx.body()) {
                 if let Some(nick) = caps.name("nick") {
                     if nick.as_str() != ctx.current_nickname() {
                         return Flow::Break;
