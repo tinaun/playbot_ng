@@ -1,20 +1,11 @@
 use playground::{self, ExecuteRequest, Channel, Mode};
 use paste::paste;
 use reqwest::Client;
-use super::{Module, Flow, Context};
+use super::{Flow, Context};
 
-pub struct Playground {
-    http: Client,
-}
-
-impl Playground {
-    pub fn new(http: Client) -> Self {
-        Self { http }
-    }
-}
-
-impl Module for Playground {
-    fn run(&mut self, ctx: Context) -> Flow {
+pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
+    let http = http.clone();
+    move |ctx| {
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
         }
@@ -45,7 +36,7 @@ impl Module for Playground {
         }
 
         if show_version {
-            print_version(&self.http, channel, &ctx);
+            print_version(&http, channel, &ctx);
             return Flow::Break;
         }
 
@@ -57,7 +48,7 @@ impl Module for Playground {
         request.set_channel(channel);
         request.set_mode(mode);
 
-        execute(&ctx, &self.http, &request);
+        execute(&ctx, &http, &request);
 
         Flow::Break
     }

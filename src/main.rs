@@ -1,5 +1,6 @@
 #![feature(box_patterns)]
 #![feature(nll)]
+#![feature(option_filter)]
 extern crate serde;
 #[macro_use] extern crate failure;
 extern crate irc;
@@ -11,6 +12,8 @@ extern crate serde_json as json;
 extern crate chrono;
 extern crate itertools;
 extern crate regex;
+#[macro_use]
+extern crate lazy_static;
 
 use chrono::prelude::*;
 

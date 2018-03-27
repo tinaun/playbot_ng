@@ -1,6 +1,6 @@
 use syn;
 use reqwest::Client;
-use super::{Module, Flow, Context};
+use super::{Flow, Context};
 
 pub struct CodeDB<'a> {
     db: &'a mut ::codedb::CodeDB,
