@@ -1,5 +1,3 @@
-use std::rc::Rc;
-use std::cell::RefCell;
 use irc::client::prelude::{Config, ChannelExt, Command, IrcReactor, IrcClient, Message, ClientExt};
 use failure::Error;
 use reqwest;
@@ -41,12 +39,12 @@ pub fn run() -> Result<(), Error> {
 
     client.identify()?;
 
-    let modules = Rc::new(RefCell::new(vec![
+    let mut modules = vec![
         CrateInfo::new("?crate").boxed(),
         //        CodeDB::new(&mut codedb, &http).boxed(),
         Egg::new().boxed(),
         Playground::new(http).boxed(),
-    ]));
+    ];
 
     reactor
         .register_client_with_handler(client, move |client, message| {
@@ -60,7 +58,6 @@ pub fn run() -> Result<(), Error> {
             }
 
             if modules
-                .borrow_mut()
                 .iter_mut()
                 .any(|module| module.run(context.clone()) == Flow::Break)
             {
@@ -76,12 +73,14 @@ pub fn run() -> Result<(), Error> {
     Ok(())
 }
 
+type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
+
 #[derive(Clone)]
 pub struct Context<'a> {
     body: &'a str,
     is_directly_addressed: bool,
     is_ctcp: bool,
-    send_fn: fn(&IrcClient, &str, &str) -> irc::error::Result<()>,
+    send_fn: SendFn,
     source: &'a str,
     source_nickname: &'a str,
     target: &'a str,
@@ -132,9 +131,9 @@ impl<'a> Context<'a> {
             }
         };
 
-        let send_fn = match target.is_channel_name() {
-            true => IrcClient::send_notice,
-            false => IrcClient::send_privmsg,
+        let send_fn: SendFn = match target.is_channel_name() {
+            true => |client, target, message| client.send_notice(target, message),
+            false => |client, target, message| client.send_privmsg(target, message),
         };
 
         let current_nickname = client.current_nickname();
