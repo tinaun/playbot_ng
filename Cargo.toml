@@ -16,3 +16,6 @@ chrono = { version = "0.4.0", features = ["serde"] }
 itertools = "0.7.7"
 regex = "0.2.10"
 lazy_static = "1.0.0"
+playground = { path = "playground" }
+
+[workspace]

@@ -1,3 +1,8 @@
+extern crate failure;
+extern crate reqwest;
+#[macro_use]
+extern crate serde_derive;
+
 use failure::Error;
 use reqwest::Client;
 use std::str;

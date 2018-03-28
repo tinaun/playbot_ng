@@ -1,0 +1,10 @@
+[package]
+name = "playground"
+version = "0.1.0"
+authors = ["panicbit <panicbit.dev@gmail.com>"]
+
+[dependencies]
+reqwest = "0.8.5"
+failure = "0.1.1"
+serde = "1.0.36"
+serde_derive = "1.0.36"
