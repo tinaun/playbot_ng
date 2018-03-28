@@ -1,5 +1,7 @@
 use irc;
 use irc::client::prelude::*;
+use regex::Regex;
+use std::iter;
 
 type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
@@ -79,7 +81,7 @@ impl<'a> Context<'a> {
         })
     }
 
-    pub fn body(&self) -> &str {
+    pub fn body(&self) -> &'a str {
         self.body
     }
 
@@ -98,15 +100,35 @@ impl<'a> Context<'a> {
         (self.send_fn)(self.client, self.target, message.as_ref());
     }
 
-    pub fn source(&self) -> &str {
+    pub fn source(&self) -> &'a str {
         self.source
     }
 
-    pub fn source_nickname(&self) -> &str {
+    pub fn source_nickname(&self) -> &'a str {
         self.source_nickname
     }
 
-    pub fn current_nickname(&self) -> &str {
+    pub fn current_nickname(&self) -> &'a str {
         self.current_nickname
+    }
+
+    pub fn inline_contexts<'b>(&'b self) -> Box<Iterator<Item = Context<'a>> + 'b> {
+        lazy_static! {
+            static ref INLINE_CMD: Regex = Regex::new(r"\{(.*?)}").unwrap();
+        }
+
+        if self.is_directly_addressed() {
+            return Box::new(iter::empty());
+        }
+
+        let contexts = INLINE_CMD
+            .captures_iter(self.body())
+            .flat_map(|caps| caps.get(1))
+            .map(move |body| Context {
+                body: body.as_str(),
+                .. *self
+            });
+        
+        Box::new(contexts)
     }
 }

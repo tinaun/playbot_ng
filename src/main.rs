@@ -1,6 +1,7 @@
 #![feature(box_patterns)]
-#![feature(nll)]
 #![feature(option_filter)]
+#![feature(conservative_impl_trait)]
+#![feature(universal_impl_trait)]
 extern crate serde;
 #[macro_use] extern crate failure;
 extern crate irc;
@@ -20,7 +21,7 @@ use chrono::prelude::*;
 mod playground;
 mod paste;
 mod cratesio;
-mod codedb;
+// mod codedb;
 mod bot;
 
 fn main() {

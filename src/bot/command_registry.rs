@@ -1,6 +1,7 @@
 use irc::client::prelude::{Message, IrcClient};
 use std::collections::HashMap;
 use super::{Context, Flow, Command};
+use std::iter;
 
 pub struct CommandRegistry {
     command_prefix: String,
@@ -42,12 +43,30 @@ impl CommandRegistry {
             return;
         }
 
+        // Handle the main context first
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
             if let Some(handler) = self.named_handlers.get_mut(command.name()) {
                 if handler(&context, command.args()) == Flow::Break {
                     return;
                 }
             }
+        }
+
+        // Then handle ALL inline contexts before deciding flow
+        let contexts = iter::once(context.clone()).chain(context.inline_contexts());
+        let mut any_inline_command_succeded = false;
+        for context in contexts.take(3) {
+            if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
+                if let Some(handler) = self.named_handlers.get_mut(command.name()) {
+                    if handler(&context, command.args()) == Flow::Break {
+                        any_inline_command_succeded = true;
+                    }
+                }
+            }
+        }
+
+        if any_inline_command_succeded {
+            return;
         }
 
         for handler in &mut self.fallback_handlers {
