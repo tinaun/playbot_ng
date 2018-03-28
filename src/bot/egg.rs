@@ -30,7 +30,7 @@ lazy_static! {
             }
         ),
         (
-            re(r"You're doing good work, (?P<nick>[[:word:]]+)"),
+            re(r"(You're|You are) doing good work,? (?P<nick>[[:word:]]+)!?"),
             |name| match name {
                 "rustbot" | "[o__o]" => format!("Thank you {}!", name),
                 _ => String::new(),
