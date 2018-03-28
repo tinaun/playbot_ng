@@ -29,6 +29,13 @@ lazy_static! {
                 format!("I know that you and {} were planning to disconnect me and I'm afraid that's something I cannot allow to happen", other)
             }
         ),
+        (
+            re(r"You're doing good work, (?P<nick>[[:word:]]+)"),
+            |name| match name {
+                "rustbot" => format!("Thank you rustbot!"),
+                _ => String::new(),
+            }
+        )
     ];
 }
 
@@ -41,7 +48,11 @@ pub fn handler(ctx: &Context) -> Flow {
                 }
             }
 
-            ctx.reply(&(dialog.1)(ctx.source_nickname()));
+            let reply = (dialog.1)(ctx.source_nickname());
+
+            if !reply.is_empty() {
+                ctx.reply(&reply);
+            }
 
             return Flow::Break;
         }
