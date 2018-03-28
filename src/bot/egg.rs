@@ -32,7 +32,7 @@ lazy_static! {
         (
             re(r"You're doing good work, (?P<nick>[[:word:]]+)"),
             |name| match name {
-                "rustbot" => format!("Thank you rustbot!"),
+                "rustbot" | "[o__o]" => format!("Thank you {}!", name),
                 _ => String::new(),
             }
         )
