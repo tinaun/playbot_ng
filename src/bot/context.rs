@@ -112,17 +112,15 @@ impl<'a> Context<'a> {
         self.current_nickname
     }
 
-    pub fn inline_contexts<'b>(&'b self) -> Box<Iterator<Item = Context<'a>> + 'b> {
+    pub fn inline_contexts<'b>(&'b self) -> impl Iterator<Item = Context<'a>> + 'b {
         lazy_static! {
             static ref INLINE_CMD: Regex = Regex::new(r"\{(.*?)}").unwrap();
         }
 
-        if self.is_directly_addressed() {
-            return Box::new(iter::empty());
-        }
+        let body = if self.is_directly_addressed() { "" } else { self.body };
 
         let contexts = INLINE_CMD
-            .captures_iter(self.body())
+            .captures_iter(body)
             .flat_map(|caps| caps.get(1))
             .map(move |body| Context {
                 body: body.as_str(),
