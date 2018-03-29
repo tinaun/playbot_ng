@@ -19,7 +19,6 @@ extern crate playground;
 
 use chrono::prelude::*;
 
-mod paste;
 mod cratesio;
 // mod codedb;
 mod bot;

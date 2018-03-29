@@ -6,10 +6,17 @@ extern crate serde_derive;
 use std::str;
 
 pub mod execute;
-pub use execute::execute;
+pub use execute::{
+    execute,
+    Request as ExecuteRequest,
+    Response as ExecuteResponse,
+};
 
-pub mod version;
+mod version;
 pub use version::{version, Version};
+
+pub mod paste;
+pub use paste::paste;
 
 #[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]

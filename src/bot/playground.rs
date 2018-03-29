@@ -1,5 +1,4 @@
 use playground::{self, ExecuteRequest, Channel, Mode};
-use paste::paste;
 use reqwest::Client;
 use super::{Flow, Context};
 
@@ -55,7 +54,7 @@ pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
 }
 
 fn print_version(http: &Client, channel: Channel, ctx: &Context) {
-    let resp = match ::playground::version(http, channel) {
+    let resp = match playground::version(http, channel) {
         Err(e) => return eprintln!("Failed to get version: {:?}", e),
         Ok(resp) => resp,
     };
@@ -92,7 +91,7 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
             stderr = resp.stderr,
         );
 
-        let url = match paste(http, code, request.channel(), request.mode()) {
+        let url = match playground::paste(http, code, request.channel(), request.mode()) {
             Ok(url) => url,
             Err(e) => return {
                 eprintln!("Failed to paste code: {:?}", e);

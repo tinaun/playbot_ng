@@ -1,8 +1,5 @@
-use reqwest::Client;
-use failure::Error;
-use playground::{Channel, Mode};
-
-use std::collections::HashMap;
+use {Channel, Mode};
+use reqwest::{Client, Error};
 
 pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mode) -> Result<String, Error> {
     let gist_id = client
