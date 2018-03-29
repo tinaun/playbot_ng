@@ -2,7 +2,6 @@ use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use super::{Flow, Context};
 use itertools::Itertools;
-use reqwest;
 use reqwest::StatusCode::NotFound;
 
 pub fn handler(ctx: &Context, args: &[&str]) -> Flow {

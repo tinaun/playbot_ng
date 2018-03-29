@@ -1,7 +1,6 @@
 use irc;
 use irc::client::prelude::*;
 use regex::Regex;
-use std::iter;
 
 type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
