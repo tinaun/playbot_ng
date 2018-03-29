@@ -3,78 +3,13 @@ extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
 
-use failure::Error;
-use reqwest::Client;
 use std::str;
-use std::borrow::Cow;
 
-pub fn execute(client: &Client, req: &ExecuteRequest) -> Result<ExecuteResponse, Error> {
-    let resp = client
-        .post("https://play.rust-lang.org/execute")
-        .json(req)
-        .send()?
-        .json()?;
-    
-    Ok(resp)
-}
+pub mod execute;
+pub use execute::execute;
 
-pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
-    let resp = client
-        .get(&format!("https://play.rust-lang.org/meta/version/{}", channel.as_str()))
-        .send()?
-        .json()?;
-
-    Ok(resp)
-}
-
-#[derive(Serialize,Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ExecuteRequest<'a> {
-    code: Cow<'a, str>,
-    channel: Channel,
-    crate_type: CrateType,
-    mode: Mode,
-    tests: bool,
-}
-
-impl<'a> ExecuteRequest<'a> {
-    pub fn new<S: Into<Cow<'a, str>>>(code: S) -> Self {
-        Self {
-            code: code.into(),
-            channel: Channel::Stable,
-            crate_type: CrateType::Bin,
-            mode: Mode::Debug,
-            tests: false,
-        }
-    }
-
-    pub fn code(&self) -> &str {
-        &self.code
-    }
-
-    pub fn channel(&self) -> Channel {
-        self.channel
-    }
-
-    pub fn set_channel(&mut self, channel: Channel) {
-        self.channel = channel;
-    }
-
-    pub fn mode(&self) -> Mode {
-        self.mode
-    }
-
-    pub fn set_mode(&mut self, mode: Mode) {
-        self.mode = mode;
-    }
-}
-
-#[derive(Deserialize,Debug)]
-pub struct ExecuteResponse {
-    pub stderr: String,
-    pub stdout: String,
-    pub success: bool,
-}
+pub mod version;
+pub use version::{version, Version};
 
 #[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]
@@ -114,13 +49,6 @@ impl Channel {
             Channel::Nightly => "nightly",
         }
     }
-}
-
-#[derive(Deserialize)]
-pub struct Version {
-    pub date: String,
-    pub hash: String,
-    pub version: String,
 }
 
 #[derive(Deserialize)]
