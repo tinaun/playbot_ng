@@ -16,10 +16,10 @@ extern crate regex;
 #[macro_use]
 extern crate lazy_static;
 extern crate playground;
+extern crate cratesio;
 
 use chrono::prelude::*;
 
-mod cratesio;
 // mod codedb;
 mod bot;
 

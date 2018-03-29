@@ -17,5 +17,6 @@ itertools = "0.7.7"
 regex = "0.2.10"
 lazy_static = "1.0.0"
 playground = { path = "playground" }
+cratesio = { path = "cratesio" }
 
 [workspace]

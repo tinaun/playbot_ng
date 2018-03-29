@@ -14,23 +14,15 @@ pub fn handler(ctx: &Context, args: &[&str]) -> Flow {
     let info = match cratesio::crate_info(crate_name) {
         Ok(info) => info,
         // TODO: Use proper error types
-        Err(err) => match err.downcast::<reqwest::Error>() {
-            Ok(ref err) if err.status() == Some(NotFound) => {
-                ctx.reply(format!("Crate '{}' does not exist.", crate_name));
-                return Flow::Break
-            },
-            Ok(err) => {
-                eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
-                ctx.reply(format!("Failed to get crate info for {}", crate_name));
-                return Flow::Break
-            },
-            Err(err) => {
-                eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
-                ctx.reply(format!("Failed to get crate info for {}", crate_name));
-                println!("?crate {}: other error: {:?}", crate_name, err);
-                return Flow::Break
-            }
+        Err(ref err) if err.status() == Some(NotFound) => {
+            ctx.reply(format!("Crate '{}' does not exist.", crate_name));
+            return Flow::Break
         },
+        Err(err) => {
+            eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
+            ctx.reply(format!("Failed to get crate info for {}", crate_name));
+            return Flow::Break
+        }
     };
 
     let krate = info.krate();

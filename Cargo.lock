@@ -122,6 +122,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cratesio"
+version = "0.1.0"
+dependencies = [
+ "reqwest 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "crc"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -654,6 +664,7 @@ name = "playbot_ng"
 version = "0.1.0"
 dependencies = [
  "chrono 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cratesio 0.1.0",
  "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "irc 0.13.3 (git+https://github.com/aatxe/irc?branch=develop)",
  "itertools 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
