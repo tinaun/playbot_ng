@@ -13,18 +13,33 @@ extern crate playground;
 extern crate cratesio;
 
 use chrono::prelude::*;
+use chrono::Duration;
+use std::thread;
 
 // mod codedb;
 mod bot;
 
 fn main() {
+    let sleep_dur = Duration::seconds(5).to_std().unwrap();
+
     loop {   
         println!("{} Starting up", Utc::now());
-        if let Ok(e) = bot::run() {
-            eprintln!("Disconnected because: {:?}", e);
-        } else {
-            eprintln!("Disconnected for an unknown reason");
+
+        match bot::run() {
+            Ok(()) => eprintln!("[OK] Disconnected for an unknown reason"),
+            Err(e) => {
+                eprintln!("[ERR] Disconnected");
+
+                for cause in e.causes() {
+                    eprintln!("[ERR] Caused by: {}", cause);
+                }
+            }
         }
+
+        eprintln!("Reconnecting in 5 seconds");
+
+        thread::sleep(sleep_dur);
+
         println!("{} Terminated", Utc::now());
     }
 }
