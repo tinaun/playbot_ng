@@ -1,7 +1,9 @@
-use super::{Context, Flow};
+use super::{Context, Flow, FlowFuture};
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
+use futures::prelude::*;
+use std::sync::Arc;
 
 lazy_static! {
     static ref SCRIPT: Vec<(Regex, fn(&str) -> String)> = vec![
@@ -39,26 +41,30 @@ lazy_static! {
     ];
 }
 
-pub fn handler(ctx: &Context) -> Flow {
-    for dialog in &*SCRIPT {
-        if let Some(caps) = dialog.0.captures(ctx.body()) {
-            if let Some(nick) = caps.name("nick") {
-                if nick.as_str() != ctx.current_nickname() {
-                    return Flow::Break;
+pub fn handler() -> Arc<Fn(Context) -> FlowFuture> {
+    Arc::new(|ctx| {
+        Box::new(async_block! {
+            for dialog in &*SCRIPT {
+                if let Some(caps) = dialog.0.captures(ctx.body()) {
+                    if let Some(nick) = caps.name("nick") {
+                        if nick.as_str() != ctx.current_nickname().as_str() {
+                            return Ok(Flow::Break);
+                        }
+                    }
+
+                    let reply = (dialog.1)(ctx.source_nickname());
+
+                    if !reply.is_empty() {
+                        ctx.reply(&reply);
+                    }
+
+                    return Ok(Flow::Break);
                 }
             }
 
-            let reply = (dialog.1)(ctx.source_nickname());
-
-            if !reply.is_empty() {
-                ctx.reply(&reply);
-            }
-
-            return Flow::Break;
-        }
-    }
-
-    Flow::Continue
+            Ok(Flow::Continue)
+        })
+    })
 }
 
 fn re(re: &str) -> Regex {

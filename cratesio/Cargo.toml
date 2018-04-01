@@ -4,7 +4,13 @@ version = "0.1.0"
 authors = ["panicbit <panicbit.dev@gmail.com>"]
 
 [dependencies]
-reqwest = "0.8.5"
+reqwest = { version = "0.8.5", features = ["unstable"] }
 url = "1.7.0"
 serde = "1.0.36"
 serde_derive = "1.0.36"
+apply = "0.2.2"
+futures_adapter = { path = "../futures_adapter" }
+# futures-util = { git = "https://github.com/rust-lang-nursery/futures-rs.git" }
+
+[dependencies.futures-await]
+git = "https://github.com/alexcrichton/futures-await"

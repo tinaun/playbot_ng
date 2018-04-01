@@ -1,7 +1,15 @@
+#![feature(generators)]
+#![feature(pin)]
+#![feature(proc_macro)]
+
 extern crate failure;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
+extern crate apply;
+
+extern crate futures_await as futures;
+extern crate futures_adapter;
 
 use std::str;
 
@@ -34,7 +42,7 @@ impl Mode {
     }
 }
 
-#[derive(Serialize,Debug)]
+#[derive(Serialize,Debug,Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum CrateType {
     Bin,
@@ -58,12 +66,12 @@ impl Channel {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Clone)]
 pub struct Crates {
     crates: Vec<Crate>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Clone)]
 pub struct Crate {
     name: String,
     version: String,

@@ -1,20 +1,42 @@
+#![feature(generators)]
+#![feature(pin)]
+#![feature(proc_macro)]
+
 extern crate reqwest;
 extern crate url;
 #[macro_use]
 extern crate serde_derive;
+extern crate apply;
+// extern crate futures_await as futures;
 
+extern crate futures_await as futures;
+extern crate futures_adapter;
+
+use futures::prelude::*;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
+use reqwest::unstable::async::Client;
+use apply::Apply;
+use futures_adapter::OldFuture;
 
-pub fn crate_info(name: &str) -> Result<Info, reqwest::Error> {
+pub fn crate_info(
+    client: &Client,
+    name: &str,
+) -> impl Future<Item = Info, Error = reqwest::Error> {
+    let client = client.clone();
     let url = format!(
         "https://crates.io/api/v1/crates/{}",
         utf8_percent_encode(name, PATH_SEGMENT_ENCODE_SET).collect::<String>()
     );
-    let info = reqwest::get(&url)?
-        .json()?;
 
-    Ok(info)
+    async_block! {
+
+        let resp = client.get(&url).send().apply(OldFuture);
+        let json = await!(resp)?.json().apply(OldFuture);
+
+        await!(json)
+    }
 }
+
 
 #[derive(Deserialize,Debug,Clone,PartialEq,Eq)]
 pub struct Info {

@@ -1,5 +1,9 @@
 #![feature(box_patterns)]
 #![feature(option_filter)]
+#![feature(generators)]
+#![feature(pin)]
+#![feature(proc_macro)]
+// #![feature(nll)]
 extern crate failure;
 extern crate irc;
 extern crate reqwest;
@@ -11,6 +15,11 @@ extern crate regex;
 extern crate lazy_static;
 extern crate playground;
 extern crate cratesio;
+extern crate apply;
+extern crate shared_str;
+
+extern crate futures_await as futures;
+extern crate futures_adapter;
 
 use chrono::prelude::*;
 use chrono::Duration;

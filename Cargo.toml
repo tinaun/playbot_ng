@@ -15,5 +15,9 @@ regex = "0.2.10"
 lazy_static = "1.0.0"
 playground = { path = "playground" }
 cratesio = { path = "cratesio" }
+apply = "0.2.2"
+futures_adapter = { path = "futures_adapter" }
+shared_str = { path = "shared_str" }
 
-[workspace]
+[dependencies.futures-await]
+git = "https://github.com/alexcrichton/futures-await"

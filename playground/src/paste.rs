@@ -1,16 +1,28 @@
 use {Channel, Mode};
-use reqwest::{Client, Error};
+use reqwest::unstable::async::Client;
+use reqwest::Error;
+use futures::prelude::*;
+use futures_adapter::OldFuture;
+use apply::Apply;
 
-pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mode) -> Result<String, Error> {
-    let gist_id = client
+#[async]
+pub fn paste(
+    client: Client,
+    text: String,
+    channel: Channel,
+    mode: Mode,
+) -> Result<String, Error> {
+    let resp = client
         .post("https://play.rust-lang.org/meta/gist/")
-        .json(&Request::new(text.as_ref()))
-        .send()?
-        .error_for_status()?
-        .json::<Response>()?
-        .id;
+        .json(&Request::new(text))
+        .send()
+        .apply(OldFuture);
+    let mut resp = await!(resp)?.error_for_status()?;
+    let resp = resp.json::<Response>().apply(OldFuture);
+    let gist_id = await!(resp)?.id;
 
-    let url = format!("https://play.rust-lang.org/?gist={gist}&version={channel}&mode={mode}",
+    let url = format!(
+        "https://play.rust-lang.org/?gist={gist}&version={channel}&mode={mode}",
         gist = gist_id,
         channel = channel.as_str(),
         mode = mode.as_str()
@@ -19,14 +31,16 @@ pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mo
     Ok(url)
 }
 
-#[derive(Serialize)]
-struct Request<'a> {
-    code: &'a str,
+#[derive(Serialize, Clone)]
+struct Request {
+    code: String,
 }
 
-impl<'a> Request<'a> {
-    fn new(code: &'a str) -> Self {
-        Request { code }
+impl Request {
+    fn new(code: impl Into<String>) -> Self {
+        Request {
+            code: code.into()
+        }
     }
 }
 

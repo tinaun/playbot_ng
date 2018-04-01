@@ -1,30 +1,39 @@
 use {Channel, CrateType, Mode};
-use std::borrow::Cow;
-use reqwest::{Client, Error};
+use reqwest::unstable::async::Client;
+use reqwest::Error;
+use futures::prelude::*;
+use futures_adapter::OldFuture;
+use apply::Apply;
 
-pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
+#[async]
+pub fn execute(
+    client: Client,
+    req: Request,
+) -> Result<Response, Error> {
     let resp = client
         .post("https://play.rust-lang.org/execute")
-        .json(req)
-        .send()?
-        .error_for_status()?
-        .json()?;
-    
-    Ok(resp)
+        .json(&req)
+        .send()
+        .apply(OldFuture);
+    let mut resp = await!(resp)?.error_for_status()?;
+    let resp = resp.json().apply(OldFuture);
+
+    await!(resp)
 }
 
-#[derive(Serialize,Debug)]
+
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Request<'a> {
-    code: Cow<'a, str>,
+pub struct Request {
+    code: String,
     channel: Channel,
     crate_type: CrateType,
     mode: Mode,
     tests: bool,
 }
 
-impl<'a> Request<'a> {
-    pub fn new<S: Into<Cow<'a, str>>>(code: S) -> Self {
+impl Request {
+    pub fn new(code: impl Into<String>) -> Self {
         Self {
             code: code.into(),
             channel: Channel::Stable,

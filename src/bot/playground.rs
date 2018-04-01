@@ -1,61 +1,72 @@
 use playground::{self, ExecuteRequest, Channel, Mode};
-use reqwest::Client;
-use super::{Flow, Context};
+use reqwest::unstable::async::Client;
+use super::{Flow, Context, FlowFuture};
+use std::sync::Arc;
 
-pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
-    let http = http.clone();
-    move |ctx| {
-        if !ctx.is_directly_addressed() {
-            return Flow::Continue;
-        }
+use futures::prelude::*;
 
-        let mut body = ctx.body();
-        let mut channel = Channel::Stable;
-        let mut show_version = false;
-        let mut bare = false;
-        let mut mode = Mode::Debug;
+pub fn handler(http: Client) -> Arc<Fn(Context) -> FlowFuture> {
+    Arc::new(move |ctx| {
+        let http = http.clone();
+// 
+        Box::new(async_block! {
 
-        // Parse flags
-        loop {
-            body = body.trim_left();
-            let flag = body.split_whitespace().next().unwrap_or("");
-
-            match flag {
-                "--stable" => channel = Channel::Stable,
-                "--beta" => channel = Channel::Beta,
-                "--nightly" => channel = Channel::Nightly,
-                "--version" | "VERSION" => show_version = true,
-                "--bare" | "--mini" => bare = true,
-                "--debug" => mode = Mode::Debug,
-                "--release" => mode = Mode::Release,
-                _ => break,
+            if !ctx.is_directly_addressed() {
+                return Ok(Flow::Continue);
             }
 
-            body = &body[flag.len()..];
-        }
+            let mut body = ctx.body().clone();
+            let mut channel = Channel::Stable;
+            let mut show_version = false;
+            let mut bare = false;
+            let mut mode = Mode::Debug;
 
-        if show_version {
-            print_version(&http, channel, &ctx);
-            return Flow::Break;
-        }
+            // Parse flags
+            loop {
+                body = body.trim_left();
+                let flag = body.split_whitespace().next().unwrap_or(body.from_str(""));
 
-        let code = if bare { body.to_string() } else {
-            format!(include!("../../template.rs"), code = body)
-        };
+                match flag.as_str() {
+                    "--stable" => channel = Channel::Stable,
+                    "--beta" => channel = Channel::Beta,
+                    "--nightly" => channel = Channel::Nightly,
+                    "--version" | "VERSION" => show_version = true,
+                    "--bare" | "--mini" => bare = true,
+                    "--debug" => mode = Mode::Debug,
+                    "--release" => mode = Mode::Release,
+                    _ => break,
+                }
 
-        let mut request = ExecuteRequest::new(code.as_ref());
-        request.set_channel(channel);
-        request.set_mode(mode);
+                body = body.slice(flag.len()..);
+            }
 
-        execute(&ctx, &http, &request);
+            if show_version {
+                await!(print_version(http.clone(), channel, ctx.clone()));
+                return Ok(Flow::Break);
+            }
 
-        Flow::Break
-    }
+            let code = if bare { body.to_string() } else {
+                format!(include!("../../template.rs"), code = body)
+            };
+
+            let mut request = ExecuteRequest::new(code);
+            request.set_channel(channel);
+            request.set_mode(mode);
+
+            await!(execute(ctx, http, request));
+
+            Ok(Flow::Break)
+        })
+    })
 }
 
-fn print_version(http: &Client, channel: Channel, ctx: &Context) {
-    let resp = match playground::version(http, channel) {
-        Err(e) => return eprintln!("Failed to get version: {:?}", e),
+#[async] 
+fn print_version(http: Client, channel: Channel, ctx: Context) -> Result<(), ()> {
+    let resp = match await!(playground::version(http, channel)) {
+        Err(e) => {
+            eprintln!("Failed to get version: {:?}", e);
+            return Ok(());
+        }
         Ok(resp) => resp,
     };
     
@@ -65,14 +76,18 @@ fn print_version(http: &Client, channel: Channel, ctx: &Context) {
         date = resp.date,
     );
 
-    ctx.reply(version);
+    ctx.reply(&version);
+
+    Ok(())
 }
 
-pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
-    let resp = match playground::execute(http, &request) {
+#[async]
+pub fn execute(ctx: Context, http: Client, request: ExecuteRequest) -> Result<(), ()> {
+    let resp = match await!(playground::execute(http.clone(), request.clone())) {
         Ok(resp) => resp,
-        Err(e) => return {
+        Err(e) => {
             eprintln!("Failed to execute code: {:?}", e);
+            return Ok(())
         },
     };
 
@@ -91,13 +106,16 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
             stderr = resp.stderr,
         );
 
-        let url = match playground::paste(http, code, request.channel(), request.mode()) {
+        let url = match await!(playground::paste(http, code, request.channel(), request.mode())) {
             Ok(url) => url,
-            Err(e) => return {
+            Err(e) => {
                 eprintln!("Failed to paste code: {:?}", e);
+                return Ok(());
             },
         };
 
-        ctx.reply(format!("~~~ Output truncated; full output at {}", url));
+        ctx.reply(&format!("~~~ Output truncated; full output at {}", url));
     }
+
+    Ok(())
 }
