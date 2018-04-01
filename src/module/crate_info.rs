@@ -1,6 +1,6 @@
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
-use super::{Flow, Context};
+use {Flow, Context};
 use itertools::Itertools;
 use reqwest::StatusCode::NotFound;
 

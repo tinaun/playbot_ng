@@ -1,6 +1,6 @@
 use playground::{self, ExecuteRequest, Channel, Mode};
 use reqwest::Client;
-use super::{Flow, Context};
+use {Flow, Context};
 
 pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
     let http = http.clone();

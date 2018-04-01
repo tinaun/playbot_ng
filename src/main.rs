@@ -12,12 +12,24 @@ extern crate lazy_static;
 extern crate playground;
 extern crate cratesio;
 
-use chrono::prelude::*;
-use chrono::Duration;
 use std::thread;
+use chrono::{
+    prelude::*,
+    Duration,
+};
+use irc::client::prelude::{Config, IrcReactor, ClientExt};
+use failure::Error;
+use self::{
+    context::Context,
+    command::Command,
+    command_registry::CommandRegistry,
+};
 
+mod context;
+mod command;
+mod command_registry;
+mod module;
 // mod codedb;
-mod bot;
 
 fn main() {
     let sleep_dur = Duration::seconds(5).to_std().unwrap();
@@ -25,7 +37,7 @@ fn main() {
     loop {   
         println!("{} Starting up", Utc::now());
 
-        match bot::run() {
+        match run() {
             Ok(()) => eprintln!("[OK] Disconnected for an unknown reason"),
             Err(e) => {
                 eprintln!("[ERR] Disconnected");
@@ -42,4 +54,36 @@ fn main() {
 
         println!("{} Terminated", Utc::now());
     }
+}
+
+pub fn run() -> Result<(), Error> {
+    //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
+    let mut reactor = IrcReactor::new()?;
+    let config = Config::load("config.toml")?;
+    let client = reactor.prepare_client_and_connect(&config)?;
+    let http = reqwest::Client::new();
+    let mut commands = CommandRegistry::new("?");
+
+    commands.set_named_handler("crate", module::crate_info::handler);
+    commands.add_fallback_handler(module::egg::handler);
+    commands.add_fallback_handler(module::playground::handler(&http));
+
+    client.identify()?;
+
+    reactor
+        .register_client_with_handler(client, move |client, message| {
+            commands.handle_message(&client, &message);
+            Ok(())
+        });
+
+    // reactor blocks until a disconnection or other in `irc` error
+    reactor.run()?;
+
+    Ok(())
+}
+
+#[derive(PartialEq, Eq)]
+pub enum Flow {
+    Break,
+    Continue,
 }
