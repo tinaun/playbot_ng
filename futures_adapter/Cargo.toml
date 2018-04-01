@@ -1,0 +1,9 @@
+[package]
+name = "futures_adapter"
+version = "0.1.0"
+authors = ["panicbit <panicbit.dev@gmail.com>"]
+
+[dependencies]
+futures = { git = "https://github.com/rust-lang-nursery/futures-rs.git", features = ["nightly"] }
+old_futures = { path = "old_futures" }
+lazy_static = "1.0.0"
