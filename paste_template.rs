@@ -1,5 +1,4 @@
-r#"
-{code}
+r#"{code}
 
 /* ~~~~=== stderr ===~~~~
 {stderr}
