@@ -65,6 +65,7 @@ pub fn run() -> Result<(), Error> {
     let mut commands = CommandRegistry::new("?");
 
     commands.set_named_handler("crate", module::crate_info::handler);
+    commands.set_named_handler("help", module::help::handler);
     commands.add_fallback_handler(module::egg::handler);
     commands.add_fallback_handler(module::playground::handler(&http));
 

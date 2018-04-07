@@ -33,6 +33,10 @@ pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
                 "--bare" | "--mini" => bare = true,
                 "--debug" => mode = Mode::Debug,
                 "--release" => mode = Mode::Release,
+                "help" | "h" | "-h" | "--help" | "--h" => {
+                    super::help::display_help(ctx);
+                    return Flow::Break;
+                }
                 _ => break,
             }
 
