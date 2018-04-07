@@ -1,6 +1,11 @@
 use playground::{self, ExecuteRequest, Channel, Mode};
 use reqwest::Client;
 use {Flow, Context};
+use regex::Regex;
+
+lazy_static! {
+    static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
+}
 
 pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
     let http = http.clone();
@@ -39,8 +44,19 @@ pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
             return Flow::Break;
         }
 
+
+
         let code = if bare { body.to_string() } else {
-            format!(include!("../../template.rs"), code = body)
+            let crate_attrs = CRATE_ATTRS.find(body)
+                .map(|attr| attr.as_str())
+                .unwrap_or("");
+
+            body = &body[crate_attrs.len()..];
+
+            format!(include!("../../template.rs"),
+                crate_attrs = crate_attrs,
+                code = body,
+            )
         };
 
         let mut request = ExecuteRequest::new(code.as_ref());

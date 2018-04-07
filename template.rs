@@ -1,4 +1,6 @@
-r#"fn main() {{
+r#"{crate_attrs}
+
+fn main() {{
     println!("{{:?}}", {{
         {code}
     }});
