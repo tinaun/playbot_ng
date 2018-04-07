@@ -1,8 +1,8 @@
 # Playbot NG (eval)
 
 Playbot NG is a drop-in replacement for the retired IRC bot named playbot.
-There's an instance of Playbot NG named **eval** running on [Moznet]
-(https://wiki.mozilla.org/IRC).
+There's an instance of Playbot NG named **eval** running on
+[Moznet](https://wiki.mozilla.org/IRC).
 
 ## Usage
 
