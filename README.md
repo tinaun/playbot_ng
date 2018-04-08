@@ -28,7 +28,7 @@ To make playbot print the Rust version, pass `--version` (can be combined with t
 For convenience, inner attributes at the beginning of code are treated as crate attributes, e.g. `eval: --nightly #![feature(nll)] …`.
 This rule does not apply when `--bare` or `--mini` is given.
 
-To display a link to this help you can pass `help`, `h`, `-h`, `--help`, or `--h`.
+To display a link to this help you can pass `help`, `h`, `-h`, `-help`, `--help`, or `--h`.
 
 ### Commands
 
