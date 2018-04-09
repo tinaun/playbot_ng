@@ -96,7 +96,15 @@ impl<'a> Context<'a> {
     }
 
     pub fn reply<S: AsRef<str>>(&self, message: S) {
-        (self.send_fn)(self.client, self.target, message.as_ref());
+        let message = message.as_ref();
+        eprintln!("Replying: {:?}", message);
+        for line in message.lines() {
+            if line.len() > 400 {
+                (self.send_fn)(self.client, self.target, "<<<message too long for irc>>>");
+                continue;
+            }
+            (self.send_fn)(self.client, self.target, line);
+        }
     }
 
     pub fn source(&self) -> &'a str {
