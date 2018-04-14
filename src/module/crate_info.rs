@@ -26,7 +26,7 @@ pub fn handler(ctx: &Context, args: &[&str]) -> Flow {
 
     let krate = info.krate();
     let output = format!(
-        "{name} ({version}) - {description} -> https://crates.io/crates/{urlname} [https://docs.rs/crate/{urlname}]",
+        "\x0304{name}\x03 (\x0303{version}\x03) - {description} -> \x0302https://crates.io/crates/{urlname}\x03 [\x0302https://docs.rs/crate/{urlname}\x03]",
         name = krate.name(),
         version = krate.max_version(),
         description = krate.description().split_whitespace().join(" "),
