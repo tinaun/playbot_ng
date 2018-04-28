@@ -99,12 +99,13 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
     let output = if resp.success { &resp.stdout } else { &resp.stderr };
 
     let skip_count = if resp.success { 0 } else { 1 };
+    let take_count = if resp.success { 2 } else { 1 };
 
-    for line in output.lines().skip(skip_count).take(2) {
+    for line in output.lines().skip(skip_count).take(take_count) {
         ctx.reply(line);
     }
 
-    if output.lines().count() > 2 {
+    if output.lines().count() > take_count {
         let code = format!(include!("../../paste_template.rs"),
             code = request.code(),
             stdout = resp.stdout,
@@ -118,6 +119,6 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
             },
         };
 
-        ctx.reply(format!("~~~ Output truncated; full output at {}", url));
+        ctx.reply(format!("~~~ Full output: {}", url));
     }
 }
