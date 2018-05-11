@@ -1,6 +1,7 @@
 use irc;
 use irc::client::prelude::*;
 use regex::Regex;
+use std::rc::Rc;
 
 type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
@@ -14,7 +15,7 @@ pub struct Context<'a> {
     source_nickname: &'a str,
     target: &'a str,
     client: &'a IrcClient,
-    current_nickname: &'a str,
+    current_nickname: Rc<String>,
 }
 
 impl<'a> Context<'a> {
@@ -23,6 +24,8 @@ impl<'a> Context<'a> {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
         };
+
+        let current_nickname = Rc::new(client.current_nickname().to_owned());
 
         let source_nickname = message.source_nickname()?;
 
@@ -44,9 +47,7 @@ impl<'a> Context<'a> {
         };
 
         let is_directly_addressed = {
-            let current_nickname = client.current_nickname();
-
-            if body.starts_with(current_nickname) {
+            if body.starts_with(current_nickname.as_str()) {
                 let new_body = body[current_nickname.len()..].trim_left();
 
                 if new_body.starts_with(":") || new_body.starts_with(",") {
@@ -64,8 +65,6 @@ impl<'a> Context<'a> {
             true => |client, target, message| client.send_notice(target, message),
             false => |client, target, message| client.send_privmsg(target, message),
         };
-
-        let current_nickname = client.current_nickname();
 
         Some(Self {
             client,
@@ -115,8 +114,8 @@ impl<'a> Context<'a> {
         self.source_nickname
     }
 
-    pub fn current_nickname(&self) -> &'a str {
-        self.current_nickname
+    pub fn current_nickname(&self) -> Rc<String> {
+        self.current_nickname.clone()
     }
 
     pub fn inline_contexts<'b>(&'b self) -> impl Iterator<Item = Context<'a>> + 'b {
@@ -131,7 +130,7 @@ impl<'a> Context<'a> {
             .flat_map(|caps| caps.get(1))
             .map(move |body| Context {
                 body: body.as_str(),
-                .. *self
+                .. self.clone()
             });
         
         Box::new(contexts)
