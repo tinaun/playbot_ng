@@ -22,7 +22,7 @@ There a few flags that can modify the behaviour of the evaluation.
 You can select the release channel using `--stable` (default), `--beta`,
 or `--nightly`.
 You can pick the build profile using `--debug` (default), or `--release`.
-To make playbot evaluate yor code as it is, pass `--bare` or `--mini`.
+To make playbot evaluate your code as it is, pass `--bare` or `--mini`.
 To make playbot print the Rust version, pass `--version` (can be combined with the above channel flags; code is ignored).
 
 For convenience, inner attributes at the beginning of code are treated as crate attributes, e.g. `eval: --nightly #![feature(nll)] …`.
