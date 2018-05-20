@@ -1,10 +1,18 @@
+use module::prelude::*;
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
-use {Flow, Context};
 use itertools::Itertools;
 use reqwest::StatusCode::NotFound;
 
-pub fn handler(ctx: &Context, args: &[&str]) -> Flow {
+pub enum CrateInfo {}
+
+impl Module for CrateInfo {
+    fn init(commands: &mut CommandRegistry) {
+        commands.set_named_handler("crate", crate_handler);
+    }
+}
+
+fn crate_handler(ctx: &Context, args: &[&str]) -> Flow {
     let crate_name = match args.get(0) {
         Some(name) => name,
         None => return Flow::Continue,

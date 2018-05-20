@@ -1,14 +1,22 @@
+use module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode};
-use reqwest::Client;
-use {Flow, Context};
+use reqwest::{self, Client};
 use regex::Regex;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
 }
 
-pub fn handler(http: &Client) -> impl Fn(&Context) -> Flow {
-    let http = http.clone();
+pub enum Playground {}
+
+impl Module for Playground {
+    fn init(commands: &mut CommandRegistry) {
+        commands.add_fallback_handler(playground_handler());
+    }
+}
+
+fn playground_handler() -> impl Fn(&Context) -> Flow {
+    let http = reqwest::Client::new();
     move |ctx| {
         if !ctx.is_directly_addressed() {
             return Flow::Continue;

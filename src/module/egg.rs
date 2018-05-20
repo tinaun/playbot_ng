@@ -1,4 +1,4 @@
-use {Context, Flow};
+use module::prelude::*;
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
@@ -39,7 +39,15 @@ lazy_static! {
     ];
 }
 
-pub fn handler(ctx: &Context) -> Flow {
+pub enum Egg {}
+
+impl Module for Egg {
+    fn init(commands: &mut CommandRegistry) {
+        commands.add_fallback_handler(egg_handler);
+    }
+}
+
+pub fn egg_handler(ctx: &Context) -> Flow {
     for dialog in &*SCRIPT {
         if let Some(caps) = dialog.0.captures(ctx.body()) {
             if let Some(nick) = caps.name("nick") {

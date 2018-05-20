@@ -24,6 +24,7 @@ use self::{
     command::Command,
     command_registry::CommandRegistry,
 };
+use module::Module;
 
 mod context;
 mod command;
@@ -61,13 +62,12 @@ pub fn run() -> Result<(), Error> {
     let mut reactor = IrcReactor::new()?;
     let config = Config::load("config.toml")?;
     let client = reactor.prepare_client_and_connect(&config)?;
-    let http = reqwest::Client::new();
     let mut commands = CommandRegistry::new("?");
 
-    commands.set_named_handler("crate", module::crate_info::handler);
-    commands.set_named_handler("help", module::help::handler);
-    commands.add_fallback_handler(module::egg::handler);
-    commands.add_fallback_handler(module::playground::handler(&http));
+    module::CrateInfo::init(&mut commands);
+    module::Help::init(&mut commands);
+    module::Egg::init(&mut commands);
+    module::Playground::init(&mut commands);
 
     client.identify()?;
 
