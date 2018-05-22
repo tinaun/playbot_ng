@@ -71,7 +71,7 @@ fn playground_handler() -> impl Fn(&Context) -> Flow {
             )
         };
 
-        let mut request = ExecuteRequest::new(code.as_ref());
+        let mut request = ExecuteRequest::new(code.as_str());
         request.set_channel(channel);
         request.set_mode(mode);
 
