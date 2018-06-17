@@ -1,4 +1,4 @@
-r#"{code}
+{code}
 
 /* ~~~~=== stderr ===~~~~
 {stderr}
@@ -7,4 +7,3 @@ r#"{code}
 /* ~~~~=== stdout ===~~~~
 {stdout}
 */
-"#

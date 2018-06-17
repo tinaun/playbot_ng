@@ -1,8 +1,7 @@
-r#"{crate_attrs}
+{crate_attrs}
 
 fn main() {{
     println!("{{:?}}", {{
         {code}
     }});
 }}
-"#

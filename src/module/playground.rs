@@ -65,7 +65,7 @@ fn playground_handler() -> impl Fn(&Context) -> Flow {
 
             body = &body[crate_attrs.len()..];
 
-            format!(include!("../../template.rs"),
+            format!(include_str!("../../template.rs"),
                 crate_attrs = crate_attrs,
                 code = body,
             )
@@ -114,7 +114,7 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
     }
 
     if output.lines().count() > take_count {
-        let code = format!(include!("../../paste_template.rs"),
+        let code = format!(include_str!("../../paste_template.rs"),
             code = request.code(),
             stdout = resp.stdout,
             stderr = resp.stderr,
