@@ -13,7 +13,7 @@ impl Config {
         let file = fs::read_to_string(path)?;
         let file: toml::Value = toml::from_str(&file)?;
         let token = match file.get("token") {
-            Some(tok) => tok.to_string(),
+            Some(tok) => tok.as_str().unwrap().to_string(),
             None => return Err(err_msg("field `token` not found!")),
         };       
 

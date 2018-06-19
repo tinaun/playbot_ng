@@ -53,7 +53,7 @@ impl<'a> Context<'a> {
             }
         };
 
-        let send_fn: SendFn = |pool, channel_id, msg| { channel_id.say(msg).map(|_| ()) }; 
+        let send_fn: SendFn = |_pool, channel_id, msg| { channel_id.say(msg).map(|_| ()) }; 
 
         Some(Self {
             client: message,
@@ -88,10 +88,10 @@ impl<'a> Context<'a> {
         eprintln!("Replying: {:?}", message);
         for line in message.lines() {
             if line.len() > 2000 {
-                (self.send_fn)(self.pool, self.target, "<<<message too long for irc>>>");
+                let _ = (self.send_fn)(self.pool, self.target, "<<<message too long for irc>>>");
                 continue;
             }
-            (self.send_fn)(self.pool, self.target, line);
+            let _ = (self.send_fn)(self.pool, self.target, line);
         }
     }
 
