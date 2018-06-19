@@ -1,50 +1,42 @@
-use irc;
-use irc::client::prelude::*;
+use serenity;
+use serenity::model::{
+    channel::Message,
+    id::{ChannelId, UserId},
+};
+
+use threadpool::ThreadPool;
+
 use regex::Regex;
 use std::rc::Rc;
 
-type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
+type SendFn = fn(&ThreadPool, ChannelId, &str) -> serenity::Result<()>;
 
 #[derive(Clone)]
 pub struct Context<'a> {
     body: &'a str,
     is_directly_addressed: bool,
-    is_ctcp: bool,
     send_fn: SendFn,
-    source: &'a str,
+    source: UserId,
     source_nickname: &'a str,
-    target: &'a str,
-    client: &'a IrcClient,
+    target: ChannelId,
+    client: &'a Message,
+    pool: &'a ThreadPool,
     current_nickname: Rc<String>,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(client: &'a IrcClient, message: &'a Message) -> Option<Self> {
-        let mut body = match message.command {
-            Command::PRIVMSG(_, ref body) => body.trim(),
-            _ => return None,
-        };
+    pub fn new(pool: &'a ThreadPool, message: &'a Message) -> Option<Self> {
+        let mut body = &message.content[..];
 
-        let current_nickname = Rc::new(client.current_nickname().to_owned());
+        let id = serenity::CACHE.read().user.id;
 
-        let source_nickname = message.source_nickname()?;
+        let current_nickname = Rc::new(serenity::CACHE.read().user.name.to_owned());
 
-        let is_ctcp = body.len() >= 2 && body.chars().next() == Some('\x01')
-            && body.chars().last() == Some('\x01');
+        let source_nickname = &message.author.name;
 
-        if is_ctcp {
-            body = &body[1..body.len() - 1];
-        }
+        let source = message.author.id;
 
-        let source = message.prefix.as_ref().map(<_>::as_ref)?;
-
-        let target = match message.response_target() {
-            Some(target) => target,
-            None => {
-                eprintln!("Unknown response target");
-                return None;
-            }
-        };
+        let target = message.channel_id;
 
         let is_directly_addressed = {
             if body.starts_with(current_nickname.as_str()) {
@@ -57,24 +49,21 @@ impl<'a> Context<'a> {
 
                 has_separator
             } else {
-                !target.is_channel_name()
+                message.mentions_user_id(id)
             }
         };
 
-        let send_fn: SendFn = match target.is_channel_name() {
-            true => |client, target, message| client.send_notice(target, message),
-            false => |client, target, message| client.send_privmsg(target, message),
-        };
+        let send_fn: SendFn = |pool, channel_id, msg| { channel_id.say(msg).map(|_| ()) }; 
 
         Some(Self {
-            client,
+            client: message,
+            pool,
             body,
             send_fn,
             source,
             source_nickname,
             target,
             is_directly_addressed,
-            is_ctcp,
             current_nickname
         })
     }
@@ -91,22 +80,22 @@ impl<'a> Context<'a> {
     }
 
     pub fn is_ctcp(&self) -> bool {
-        self.is_ctcp
+        false
     }
 
     pub fn reply<S: AsRef<str>>(&self, message: S) {
         let message = message.as_ref();
         eprintln!("Replying: {:?}", message);
         for line in message.lines() {
-            if line.len() > 400 {
-                (self.send_fn)(self.client, self.target, "<<<message too long for irc>>>");
+            if line.len() > 2000 {
+                (self.send_fn)(self.pool, self.target, "<<<message too long for irc>>>");
                 continue;
             }
-            (self.send_fn)(self.client, self.target, line);
+            (self.send_fn)(self.pool, self.target, line);
         }
     }
 
-    pub fn source(&self) -> &'a str {
+    pub fn source(&self) -> UserId {
         self.source
     }
 

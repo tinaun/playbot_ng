@@ -1,7 +1,9 @@
 #![feature(box_patterns)]
 #![feature(option_filter)]
 extern crate failure;
-extern crate irc;
+extern crate serenity;
+extern crate toml;
+extern crate threadpool;
 extern crate reqwest;
 extern crate url;
 extern crate chrono;
@@ -17,20 +19,26 @@ use chrono::{
     prelude::*,
     Duration,
 };
-use irc::client::prelude::{Config, IrcReactor, ClientExt};
-use failure::Error;
+use serenity::prelude::{Client, EventHandler};
+use failure::{Error, SyncFailure};
 use self::{
     context::Context,
     command::Command,
     command_registry::CommandRegistry,
 };
 use module::Module;
+use config::Config;
 
 mod context;
 mod command;
 mod command_registry;
 mod module;
+mod config;
 // mod codedb;
+
+struct Handler;
+
+impl EventHandler for Handler {}
 
 fn main() {
     let sleep_dur = Duration::seconds(5).to_std().unwrap();
@@ -59,9 +67,10 @@ fn main() {
 
 pub fn run() -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
-    let mut reactor = IrcReactor::new()?;
+
     let config = Config::load("config.toml")?;
-    let client = reactor.prepare_client_and_connect(&config)?;
+    let mut client = Client::new(config.token(), Handler).map_err(|e| SyncFailure::new(e))?;
+    
     let mut commands = CommandRegistry::new("?");
 
     module::CrateInfo::init(&mut commands);
@@ -69,16 +78,10 @@ pub fn run() -> Result<(), Error> {
     module::Egg::init(&mut commands);
     module::Playground::init(&mut commands);
 
-    client.identify()?;
-
-    reactor
-        .register_client_with_handler(client, move |client, message| {
-            commands.handle_message(&client, &message);
-            Ok(())
-        });
+    client.with_framework(commands);
 
     // reactor blocks until a disconnection or other in `irc` error
-    reactor.run()?;
+    client.start().map_err(|e| SyncFailure::new(e))?;
 
     Ok(())
 }

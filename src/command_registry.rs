@@ -1,12 +1,17 @@
-use irc::client::prelude::{Message, IrcClient};
+use serenity::framework::Framework;
+use serenity::model::channel::Message;
+use serenity::prelude::Context as SerenityContext;
+
+use threadpool::ThreadPool;
+
 use std::collections::HashMap;
 use super::{Context, Flow, Command};
 use std::iter;
 
 pub struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<FnMut(&Context, &[&str]) -> Flow>>,
-    fallback_handlers: Vec<Box<FnMut(&Context) -> Flow>>,
+    named_handlers: HashMap<String, Box<FnMut(&Context, &[&str]) -> Flow + Send>>,
+    fallback_handlers: Vec<Box<FnMut(&Context) -> Flow + Send>>,
 }
 
 impl CommandRegistry {
@@ -21,20 +26,20 @@ impl CommandRegistry {
     pub fn set_named_handler(
         &mut self,
         name: impl Into<String>,
-        handler: impl Fn(&Context, &[&str]) -> Flow + 'static,
+        handler: impl Fn(&Context, &[&str]) -> Flow + Send + 'static,
     ) {
         self.named_handlers.insert(name.into(), Box::new(handler));  
     }
 
     pub fn add_fallback_handler(
         &mut self,
-        handler: impl Fn(&Context) -> Flow + 'static,
+        handler: impl Fn(&Context) -> Flow + Send + 'static,
     ) {
         self.fallback_handlers.push(Box::new(handler));
     }
 
-    pub fn handle_message(&mut self, client: &IrcClient, message: &Message) {
-        let context = match Context::new(&client, &message) {
+    pub fn handle_message(&mut self, pool: &ThreadPool, message: &Message) {
+        let context = match Context::new(&pool, &message) {
             Some(context) => context,
             None => return,
         };
@@ -74,5 +79,12 @@ impl CommandRegistry {
                 return;
             }
         }
+    }
+}
+
+
+impl Framework for CommandRegistry {
+    fn dispatch(&mut self, _: SerenityContext, m: Message, t: &ThreadPool) {
+        self.handle_message(t, &m);
     }
 }
