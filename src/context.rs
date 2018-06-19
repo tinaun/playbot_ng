@@ -26,8 +26,11 @@ pub struct Context<'a> {
 
 impl<'a> Context<'a> {
     pub fn new(pool: &'a ThreadPool, message: &'a Message) -> Option<Self> {
-        let mut body = &message.content[..];
+        lazy_static! {
+            static ref MENTION: Regex = Regex::new(r"<@[0-9]*>").unwrap();
+        }
 
+        let mut body = &message.content[..];
         let id = serenity::CACHE.read().user.id;
 
         let current_nickname = Rc::new(serenity::CACHE.read().user.name.to_owned());
@@ -49,7 +52,18 @@ impl<'a> Context<'a> {
 
                 has_separator
             } else {
-                message.mentions_user_id(id)
+                let mentioned = message.mentions_user_id(id);
+                
+                if mentioned {
+                    let mention = MENTION
+                        .captures(body)
+                        .and_then(|cap| cap.get(0))
+                        .unwrap();
+
+                    body = body[mention.end()..].trim_left();
+                }
+
+                mentioned
             }
         };
 
