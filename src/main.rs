@@ -81,7 +81,7 @@ pub fn run() -> Result<(), Error> {
     client.with_framework(commands);
 
     // reactor blocks until a disconnection or other in `irc` error
-    client.start().map_err(|e| SyncFailure::new(e))?;
+    client.start().map_err(|e| { println!("{:?}", e); SyncFailure::new(e) } )?;
 
     Ok(())
 }

@@ -1,13 +1,1 @@
-nickname = "nick"
-# nick_password = "pass"
-channels = [
-    "#my_channel"
-]
-server = "irc.mozilla.org"
-port = 6697
-use_ssl = true
-should_ghost = true
-ghost_sequence = ["RECOVER"]
-burst_window_length = 5
-max_messages_in_burst = 4
-encoding = "UTF-8"
+token = "goes here"
